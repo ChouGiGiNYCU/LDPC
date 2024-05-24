@@ -1,0 +1,2 @@
+conda create-n pytorch python=3.x // pytorch 為環境的名稱，原本是base
+pip list //查看packet有哪些
