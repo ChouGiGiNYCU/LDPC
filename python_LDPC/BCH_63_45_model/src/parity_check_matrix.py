@@ -20,3 +20,30 @@ def get_parity_check_matrix():
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,1,1,0,0,1,0,0,0,0,0,1,1,0,0,1,0,0,1,1,1,1,1,0,0,1,1,0,1,0,0,1,0,1,0,1,1,1,1,0,0,1,1]
     ]
     return parity_check_matrix
+
+def read_H_file(file_name):
+    curr_col=0
+    with open(file_name,'r') as file :
+        for idx,line in enumerate(file):
+            line =line.strip().split()
+            if idx==0:
+                colsize = int(line[0])
+                rowsize = int(line[1])
+                print(f"rowsize : {rowsize}  | colsize : {colsize}")
+                parity_check_matrix = [[0 for i in range(colsize)] for j in range(rowsize)]
+            elif idx==1 : # col 1 pos in each column
+                column_pos = line
+            elif idx==2:
+                row_pos = line
+            else:
+                for row_pos in line:
+                    row_pos = int(row_pos)
+                    if row_pos==0:continue
+                    else:
+                        parity_check_matrix[row_pos-1][curr_col] = 1
+                curr_col+=1
+                # print(f"curr_col : {curr_col}")
+                if curr_col >= colsize:
+                    break
+
+    return parity_check_matrix
