@@ -164,7 +164,8 @@ int main(int argc,char* argv[]){
                 // Sum_Product_Algorithm 是 soft decision 所以在調變的時候解
                 // BPSK -> {0->1}、{1->-1}
                 double receiver_codeword=(-2*transmit_codeword[i])+1+sigma*gasdev();
-                receiver_LLR[i]=(2*receiver_codeword)/pow(sigma,2);  
+                receiver_LLR[i]=(2*receiver_codeword)/pow(sigma,2);
+                receiver_LLR[i] = 2;  
             }
             it=0;
             bool error_syndrome = true;
@@ -210,7 +211,7 @@ int main(int argc,char* argv[]){
                             // Method-1 Loading Model
                             if(it==iteration_limit-1) total_LLR += CN_2_VN_LLR[VN][j];
                             else{
-                                total_LLR += CN_2_VN_LLR[VN][j]*weight_cn2vn[it][other_CN][VN][CN];
+                                total_LLR += CN_2_VN_LLR[VN][j]*weight_cn2vn[it][VN][CN];
                                 if(weight_cn2vn[it][other_CN][VN][CN]==0.0){
                                     cout << "Error!! CN : " << CN << " VN : " << VN << "it : " << it <<endl;
                                     exit(1);
@@ -238,8 +239,10 @@ int main(int argc,char* argv[]){
                     }
                 }
                 /* ------- make decision ------- */
+                cout << guess[VN]<< " ";
                 guess[VN]= (guess[VN]<0)?1:0;
             }
+            exit(1);
             /* ----- Determine bit error ----- */
             error_syndrome = false;
             bit_error_flag=false;

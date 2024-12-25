@@ -114,7 +114,7 @@ colors = [ # 根據每0.5設置的顏色範圍
 ################################################
 
 ################# Some parameter setting #################
-Load_model_file_name = r'BPNN_MTL_H9648_3_to_45_2_train.pth'
+Load_model_file_name = r'BPNN_Mulitiloss_H9648_8_valid.pth'
 Load_setting = True
 # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 iteration = 4 # iteration number

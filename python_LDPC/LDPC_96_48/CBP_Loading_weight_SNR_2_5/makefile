@@ -12,7 +12,7 @@ bias_weight_file_name = H_96_48_bias.txt
 final_layer_weight_file_name = H_96_48_Final_Layer_weight.txt
 ############# G setting ###########
 Generater_matrix_file = H_96_48_G.txt
-Encdoe_Flag = 1
+Encdoe_Flag = 0
 ###################################
 SNR_min = 0
 SNR_max = 6
