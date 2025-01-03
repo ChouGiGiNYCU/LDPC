@@ -21,6 +21,7 @@ vector<vector<int>> Find_all_same_length_girth(struct parity_check *H,int girth)
 
 int main(int argc,char* argv[]){
     // queue<vector<int>> myqueue;
+    cout << "aaa" << endl;
     struct parity_check H;
     string file_name = argv[1];
     string output_girth_file_name = argv[2];
@@ -47,6 +48,7 @@ int main(int argc,char* argv[]){
         file << endl;   
     }
     file.close();
+    /*
     ofstream file_cycle(cycle_num_record_file_name);
     file_cycle <<  girth << endl;
     for(int CN=0;CN<cycle_map.size();CN++){
@@ -57,6 +59,7 @@ int main(int argc,char* argv[]){
         }
     }
     file_cycle.close();
+    */
     return 0;
 }
 
