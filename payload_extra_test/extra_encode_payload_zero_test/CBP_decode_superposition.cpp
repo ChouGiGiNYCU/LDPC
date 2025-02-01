@@ -7,7 +7,7 @@
 #include<string>
 #include "random_number_generator.h"
 #include "UseFuction.h"
-#define frame_error_lowwer_bound 200
+#define frame_error_lowwer_bound 400
 #define total_frame_limit 10000000
 #define phi(x)  log((exp(x)+1)/(exp(x)-1+1e-14)) //CN update 精簡後的公式，1e-14是避免x=0，導致分母為零
 using namespace std;
@@ -213,8 +213,7 @@ int main(int argc,char* argv[]){
                         payload_CN_2_VN_LLR[VN][i]= alpha * phi(phi_beta_sum);
                     }
                 }
-                // cout << "CN update complete" <<endl;
-                // cin >> test;
+                
                 /* ------- VN update ------- */
                 for(int CN=0;CN<payload_H.m;CN++){
                     for(int i=0;i<payload_H.max_row_arr[CN];i++){
@@ -275,8 +274,13 @@ int main(int argc,char* argv[]){
             // ----------------------------------------------
             it=0;
             // 開始做extra 的 decode
+            // for(int i=0;i<extra_H.n;i++){
+            //     receiver_LLR[i] = receiver_LLR[i] - (((payload_guess[i]*-2)+1)/pow(sigma,2)); 
+            // } // 扣掉 payload 解完碼的結果
             for(int i=0;i<extra_H.n;i++){
-                receiver_LLR[i] = receiver_LLR[i] - (((payload_guess[i]*-2)+1)/pow(sigma,2)); 
+                // -1^(payload_guess[i])
+                double times =  payload_guess[i]==0?1:-1;
+                receiver_LLR[i] = receiver_LLR[i] * times;
             } // 扣掉 payload 解完碼的結果
             while(it<iteration_limit && extra_error_syndrome){          
                 /* ------- CN update ------- */
