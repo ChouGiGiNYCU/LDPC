@@ -1,7 +1,7 @@
 clear;
 clc;
 %%
-H_filename = "C:\Users\USER\Desktop\LDPC\PCM\PEGIrReg504x1008.txt";
+H_filename = "C:\Users\USER\Desktop\LDPC\puncture\1_SR\CBP\H_10_5.txt";
 H_filename_2 = "C:\Users\USER\Desktop\LDPC\PCM\PEGReg504x1008.txt";
 H_1 = readHFromFileByLine(H_filename);
 % H_2 = readHFromFileByLine(H_filename_2);
