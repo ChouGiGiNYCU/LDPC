@@ -45,6 +45,7 @@ int main(int argc,char* argv[]){
     double SNR_max = atof(argv[7]);
     double SNR_ratio = atof(argv[8]);
     string puncture_pos_file = argv[9];
+    int puncture_bits =  atoi(argv[10]);
     cout << "##############################" << endl;
     cout << "file_name : " << file_name << endl;
     cout << "file_name_out : " << file_name_out << endl;
@@ -54,6 +55,8 @@ int main(int argc,char* argv[]){
     cout << "SNR_min : " << SNR_min << endl;
     cout << "SNR_max : " << SNR_max << endl;
     cout << "SNR_ratio : " << SNR_ratio << endl;
+    cout << "puncture_pos_file : " << puncture_pos_file << endl;
+    cout << "puncture_bits : " << puncture_bits << endl;
     cout << "##############################" << endl;
     // define H
     struct parity_check H;
@@ -68,7 +71,7 @@ int main(int argc,char* argv[]){
     }
     // find punc
     vector<int> punc_map;
-    punc_map = Read_punc_pos(puncture_pos_file,10);
+    punc_map = Read_punc_pos(puncture_pos_file,puncture_bits);
     
     ofstream outFile(file_name_out);
     if (!outFile.is_open()) {
@@ -86,7 +89,7 @@ int main(int argc,char* argv[]){
     double *transmit_codeword = (double*)calloc(H.n,sizeof(double));
     
     double *receiver_LLR = (double*)malloc(H.n*sizeof(double));
-    double code_rate = (double)(H.n-H.m)/(double)H.n;
+    double code_rate = (double)(H.n-H.m)/(double)(H.n-punc_map.size()); // coderate 要改成 k/(n-punc_number bits)
     double ** CN_2_VN_LLR = (double**)malloc(sizeof(double*)*H.n);
     for(int i=0;i<H.n;i++) CN_2_VN_LLR[i]=(double*)calloc(H.max_col_arr[i],sizeof(double));
     double ** VN_2_CN_LLR = (double**)malloc(sizeof(double*)*H.m);
