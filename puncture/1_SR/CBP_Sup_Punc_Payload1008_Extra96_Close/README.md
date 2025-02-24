@@ -10,8 +10,6 @@ Puncture method 採用 1-SR 的概念(不是照paper的Alg) 去做 。
 ---
 ## 檔案
 
-- `PEGReg504x1008.txt` : PayLoad LDPC PCM file
-- `H_96_48.txt` : Extra LDPC PCM file
 - `PCM_P1008_E96_1SR.txt` : 合併的PCM檔案
 - `Pos_PCM_P1008_E96_1SR.txt` : Puncture 的 VN Node (start idx = 1)
 
