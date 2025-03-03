@@ -312,7 +312,7 @@ int main(int argc,char* argv[]){
                     }
                     extra_error_syndrome = false;
                 }
-                if(it<iteration_limit && payload_error_syndrome==false) extra_error_syndrome = true;
+                if(payload_correct_flag==false) extra_error_syndrome = true;
                 if(payload_error_syndrome==false) payload_correct_flag = true;
                 /* ----- Determine PayLoad BER ----- */
                 payload_bit_error_flag=false;
@@ -332,6 +332,7 @@ int main(int argc,char* argv[]){
                     }
                     
                 }  
+                
                 it++;
             }
             // 如果 syndorme check is ok ，但是codeword bit 有錯，代表解錯codeword ， BER[it+1:iteration_limit] += codeword length
@@ -342,10 +343,12 @@ int main(int argc,char* argv[]){
             }
             // 如果 syndorme check is ok ，但是codeword bit 有錯，代表解錯codeword ， BER[it+1:iteration_limit] += codeword length
             if(!extra_error_syndrome && extra_bit_error_flag){
+                
                 for(int it_idx=it;it_idx<iteration_limit;it_idx++){
                     extra_bit_error_count[it_idx] += Extra_H.n;
                 }
             }
+            // Frame count
             if(payload_bit_error_flag){
                 payload_frame_error+=1;
             }
