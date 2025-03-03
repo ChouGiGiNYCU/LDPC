@@ -4,239 +4,67 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm  # 進度條
 import matplotlib.pyplot as plt  # 繪圖
-from UseFunction import *
 from collections import defaultdict
+from function import *
 from sparse_bp_model import SparseBPNeuralNetwork
-from parity_check_matrix import *
+from read_PCM_G import *
 from Gaussian_Noise import generate_gaussian_noise
 import numpy as np
 import csv
 import random
 
 ################# Some parameter setting #################
-file_name = r"H_96_48.txt"
-Load_model_file_name = r'BPNN_Mulitiloss_H9648_15_valid.pth'
-CSV_file_name = r"BPNN_96_48_Train15.csv"
+H_file_name = r"H_10_5.txt"  
+Load_model_file_name = r'NNBP_Best.pth'
+CSV_file_name = r"BPNN_H10x5_it20.csv"
 Load_setting = True
-Encode_Flag = False
-G_file = None
-Frame_Error_Bound = 100
+G_file_name = None
+Frame_Error_Bound = 400
+BATCH_SIZE = 20
 SNR_MIN = 0
 SNR_MAX = 6
 SNR_RATIO = 1
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cpu")
+if torch.cuda.is_available(): print(f"GPU is available. Device: {torch.cuda.get_device_name(device)}")
+else: print("GPU not available, using CPU instead.")
+
 ################# Some parameter setting #################
+if G_file_name:
+    G_matrix = read_G_file(G_file_name)
+    G_rowsize = len(G_matrix)
+    G_colsize = len(G_matrix[0])
 
-# parity_check_matrix = get_parity_check_matrix()
-parity_check_matrix = read_H_file(file_name)
-
-parity_check_matrix_colsize = len(parity_check_matrix[0])
-parity_check_matrix_rowsize = len(parity_check_matrix)
+H_matrix_1 = read_H_file(H_file_name)
+parity_check_matrix_colsize = len(H_matrix_1[0])
+parity_check_matrix_rowsize = len(H_matrix_1)
 # first hidden layer node number count 1 number in parity_matrix
-hidden_layer_node = sum(sum(row) for row in parity_check_matrix)
+hidden_layer_node1 = sum(sum(row) for row in H_matrix_1)
+
 print("parity_check_matrix_rowsize : ",parity_check_matrix_rowsize)
 print("parity_check_matrix_colsize : ",parity_check_matrix_colsize)
-print("hidden_layer_node : ",hidden_layer_node)
+print("hidden_layer_node1 : ",hidden_layer_node1)
 
 # define model paramter
 input_size = parity_check_matrix_colsize
-hidden_layer_node = hidden_layer_node
+hidden_layer_node1 = hidden_layer_node1
 output_size = parity_check_matrix_colsize
 
-if torch.cuda.is_available():
-    device = torch.device("cuda")
-    print(f"GPU is available. Device: {torch.cuda.get_device_name(device)}")
-else:
-    device = torch.device("cpu")
-    print("GPU not available, using CPU instead.")
 
 
-##################### Construct CN2VN #####################
-CN2VN_pos = []
-max_row_degree =0 
-for r in range(0,len(parity_check_matrix)):
-    tmp=[]
-    for c in range(0,len(parity_check_matrix[0])):
-        if parity_check_matrix[r][c]==1:
-            tmp.append(c)
-    max_row_degree = max(max_row_degree,len(tmp))
-    CN2VN_pos.append(tmp)
-# print(CN2VN_pos)
-# CN2VN_pos
-print("max_row_degree : ",max_row_degree)
-##################### Construct CN2VN #####################
-
-##################### Construct VN2CN #####################
-VN2CN=[]
-max_col_degree=0
-for c in range(0,len(parity_check_matrix[0])):
-    tmp =[]
-    for r in range(0,len(parity_check_matrix)):
-        if parity_check_matrix[r][c]==1:
-            tmp.append(r)
-    VN2CN.append(tmp)
-    max_col_degree = max(max_col_degree,len(tmp))
-# print(VN2CN)
-print("max_col_degree : ",max_col_degree)
-##################### Construct VN2CN #####################
-
-##################### Write parity_check_matrix to txt  #####################
-# Write_txt_File(file_name, parity_check_matrix_colsize, parity_check_matrix_rowsize, max_col_degree, max_row_degree, VN2CN, CN2VN_pos)
-##################### Write parity_check_matrix to txt  #####################
-
-############################################################ Construct Every Layer Mask ############################################################
-############################ First layer mask (Input to Cn Update - Vns_to_Cn ) ############################
-connect_first_layer = []
-dict_update_cn = {}
-dict_update_cn_arr = defaultdict(list)
-dict_vn_pos = defaultdict(list)
-for CN in range(0,len(CN2VN_pos)):
-    for c in range(0,len(CN2VN_pos[CN])):
-        Vns_to_Cn = CN2VN_pos[CN][0:c] + CN2VN_pos[CN][c+1:len(CN2VN_pos[CN])]
-        connect_first_layer.append(Vns_to_Cn)
-        dict_update_cn[tuple(Vns_to_Cn)]=(CN2VN_pos[CN][c],CN) # [VNs connect to CN ] - update(CN->CN2VN_pos[r][c]) (VN,CN)
-        dict_update_cn_arr[(CN2VN_pos[CN][c],CN)].append(tuple(Vns_to_Cn))
-        # print(dict_update_cn[tuple(Vns_to_Cn)], "-",tuple(Vns_to_Cn))
-
-# construct first layer mask (CN update)
-first_layer_mask = [[False]*parity_check_matrix_colsize for i in range(0,hidden_layer_node)]
-print("layer_mask rowsize is :",len(first_layer_mask)," , colsize : ",len(first_layer_mask[0]))
-for i in range(0,len(connect_first_layer)):
-    for num in connect_first_layer[i]:
-        first_layer_mask[i][num]=True
-############################ First layer mask (Input to Cn Update - Vns_to_Cn ) ############################
-
-############################ Second layer mask (CNs to VNi) ############################
-# save neural network node position ([connect to VNs]- node_position)
-dict_connect_first_layer ={}
-for idx,arr in enumerate(connect_first_layer):
-    dict_connect_first_layer[tuple(arr)]=idx 
-# 找出input到firsy_layer連接中，firsy_layer(VN update)的node哪些是CNx update此VN
-for key in sorted(dict_update_cn_arr.keys(),key=lambda x:x[1]):
-    VN = key[0]
-    for arr in dict_update_cn_arr[key]:
-        dict_vn_pos[VN].append(dict_connect_first_layer[arr])
-# sort 
-sorted_keys = sorted(dict_vn_pos.keys(),key=lambda x:x)
-dict_vn_pos_sort = {key: dict_vn_pos[key] for key in sorted_keys}
-dict_vn_pos=dict_vn_pos_sort.copy()
-# show update key with node
-# for key in dict_vn_pos.keys():
-    # print(key,"-",dict_vn_pos[key])
-# construct CN2VN mask - second layer connect table matrix(mask)
-CN2VN_mask_VNUpdate = [[False]*hidden_layer_node for i in range(0,hidden_layer_node)]
-idx=0
-tmp=[]
-for VN in dict_vn_pos.keys():
-    if(len(dict_vn_pos[VN])==1):
-        idx+=1
-        tmp.append([VN2CN[VN][0],VN])
-        continue
-    for i,node1 in enumerate(dict_vn_pos[VN]):
-        for node2 in dict_vn_pos[VN]:
-            if node1!=node2:
-                CN2VN_mask_VNUpdate[idx][node2]=True
-        idx+=1
-        tmp.append([VN2CN[VN][i],VN]) # CN,VN
-true_indices_per_row = [[idx for idx, val in enumerate(row) if val] for row in CN2VN_mask_VNUpdate]
-# for idx,arr in enumerate(true_indices_per_row):
-#     print("neourn : {} - {} | VN {} -> CN {}".format(idx, arr, tmp[idx][1], tmp[idx][0]))
-############################ Second layer mask (CNs to VNi) ############################
-
-############################ Third layer mask (VNs to CNi) ############################
-#constuct third mask of VNs->CNi update (record VN->CN node postion in neural network)
-dict_vn_to_cn_node = defaultdict(list)
-idx=0
-for VN in dict_vn_pos.keys():
-    for CN in VN2CN[VN]:
-        dict_vn_to_cn_node[(VN,CN)] = idx
-        idx+=1
-# print("(VN update CN) - Network node idx")
-# for key in dict_vn_to_cn_node.keys():
-#     print(key,"-",dict_vn_to_cn_node[key])
-#construct third mask(VN->CN)
-VN2CN_mask_CNUpdate = [[False]*hidden_layer_node for i in range(0,hidden_layer_node)]
-# 照著cn0->vn1 -> cn0->vn2 ...順序
-idx=0
-CN_2_VN_record=[]
-for CN in range(0,parity_check_matrix_rowsize):
-    #  CN->VN1 update
-    for VN1 in  CN2VN_pos[CN]: 
-        for VN2 in CN2VN_pos[CN]:
-            if VN1!=VN2:
-                # print(dict_vn_to_cn_node[(VN2,CN)])
-                VN2CN_mask_CNUpdate[idx][dict_vn_to_cn_node[(VN2,CN)]]=True
-        idx+=1
-        CN_2_VN_record.append([CN,VN1])
-true_indices_per_row = [[idx for idx, val in enumerate(row) if val] for row in VN2CN_mask_CNUpdate]
-# for idx,arr in enumerate(true_indices_per_row):
-#     # print("node : ",idx," - ",arr,"| CN",CN_2_VN_record[idx][0],"->","VN",CN_2_VN_record[idx][1])
-#     print("neourn : {} - {} | CN {} -> VN {}".format(idx, arr, CN_2_VN_record[idx][0], CN_2_VN_record[idx][1]))
-############################ Third layer mask (VNs to CNi) ############################
-
-############################ Final layer mask (CNs to output) ############################
-# construct fourth mask of  CN ->VN + channel LLR = output
-dict_cn_to_output = defaultdict(list)
-idx=0
-for CN in range(0,len(CN2VN_pos)):
-    for VN in CN2VN_pos[CN]:
-        dict_cn_to_output[VN].append(idx)
-        idx+=1
-# sort 
-sorted_keys = sorted(dict_cn_to_output.keys(),key=lambda x:x)
-dict_cn_to_output_sort = {key: dict_cn_to_output[key] for key in sorted_keys}
-dict_cn_to_output=dict_cn_to_output_sort.copy()
-# for key in dict_cn_to_output.keys():
-#     print(key,"-",dict_cn_to_output[key]) # 跟第一層一樣
-# construct fouth final CN update to result
-CN2VN_mask_output = [[False]*hidden_layer_node for i in range(0,parity_check_matrix_colsize)]
-for VN in range(0,len(dict_cn_to_output)):
-    for node in dict_cn_to_output[VN]:
-        CN2VN_mask_output[VN][node] = True
-    # print(CN2VN_mask_output[VN])
-    
-true_indices_per_row = [[idx for idx, val in enumerate(row) if val] for row in CN2VN_mask_output]
-# for idx,arr in enumerate(true_indices_per_row):
-#     print("neourn : {} - {} ".format(idx, arr))
-############################ Final layer mask (CNs to output) ############################
-############################################################ Construct Every Layer Mask ############################################################
-
-###########################  Dot_Bias_Matrix ###########################
-# 神經網路裡面的bias=[LLR1 ... LLR_VN]*matrix
-dot_bias_matrix=torch.zeros(parity_check_matrix_colsize ,hidden_layer_node)
-idx=0
-for i in range(0,len(VN2CN)):
-    for j in range(0,len(VN2CN[i])):
-        dot_bias_matrix[i][idx]=1
-        idx = idx + 1
-# for i in dot_bias_matrix:
-#     print(i)
-###########################  Dot_Bias_Matrix ###########################
-
-########################### Read G file ###########################
-if Encode_Flag: 
-    with open(G_file, 'r') as G:
-        content = G.readlines()
-    N,K = 0,0
-    c = 0
-    for idx,line in enumerate(content):
-        line=line.strip()
-        if idx==0:
-            N,K = int(line.split()[0]),int(line.split()[1])
-            G_matrix =  np.zeros((K,N))
-            print(f"G_matrix.shape : {G_matrix.shape}")
-        elif idx==1:
-            max_col_degree = int(line.split()[0])
-        elif idx==2: continue
-        else:
-            for r in line.split():
-                G_matrix[int(r)-1][c] = 1
-            c+=1
-
-###################################################################
+# H1
+CN2VN_pos1 = Construct_CN2VN(H_matrix_1)
+VN2CN_pos1 = Construct_VN2CN(H_matrix_1)
+FLM_1,dict_update_cn1 = Construct_FLM(CN2VN_pos1,parity_check_matrix_colsize,hidden_layer_node1)
+CN2VN_mask_VNUpdate1,dict_update_vn1 = Construct_CN2VN_mask(VN2CN_pos1,dict_update_cn1,hidden_layer_node1)
+VN2CN_mask_CNUpdate1,dict_update_cn1 = Construct_VN2CN_mask(CN2VN_pos1,dict_update_vn1,hidden_layer_node1)
+CN2VN_mask_output1 = Construct_LLM(CN2VN_pos1,hidden_layer_node1,parity_check_matrix_colsize)
+Dot_bias_matrix1 = Construct_Dot_Bias_Matrix(VN2CN_pos1,parity_check_matrix_colsize,hidden_layer_node1) # 神經網路裡面的bias=[LLR1 ... LLR_VN]*matrix
+Channel_LLR_mask1 = torch.eye(parity_check_matrix_colsize)
 
 
 ########################### Model Setting ###########################
-model = SparseBPNeuralNetwork(input_size,hidden_layer_node,output_size,first_layer_mask,CN2VN_mask_VNUpdate,VN2CN_mask_CNUpdate,CN2VN_mask_output,dot_bias_matrix,device)
+model = SparseBPNeuralNetwork(input_size,output_size,hidden_layer_node1,FLM_1,CN2VN_mask_VNUpdate1,VN2CN_mask_CNUpdate1,CN2VN_mask_output1,Dot_bias_matrix1,Channel_LLR_mask1,device)
 model = model.to(device)
 if Load_setting == True:
     model.load_state_dict(torch.load(Load_model_file_name, map_location=device, weights_only=True))
@@ -257,44 +85,60 @@ for SNR in np.arange(SNR_MIN,SNR_MAX+1,SNR_RATIO):
     BER_COUNT = 0
     while FRAME_ERROR_COUNT < Frame_Error_Bound:
         # print(f"FRAME_ERROR_COUNT : {FRAME_ERROR_COUNT}")
-        ######## produce Encode CodeWord ########
-        receiver_LLR.clear()
-        if Encode_Flag:
-            Information_Bit = np.random.choice([True, False], size=(1,K))
-            Encode_CodeWord = np.dot(Information_Bit,G_matrix) % 2
-            Encode_CodeWord = Encode_CodeWord[0].tolist()
-        else:
-            Encode_CodeWord.clear()
-            for i in range(parity_check_matrix_colsize):
-                Encode_CodeWord.append(0)
-        ########################################
-        ######## Convert to receiver LLR ########
-        for i in range(0,parity_check_matrix_colsize):    
-            receiver_codeword = -2*Encode_CodeWord[i] + 1 + sigma*generate_gaussian_noise()
-            receiver_LLR.append(2*receiver_codeword/(sigma**2))
-        #########################################
+        
+        
+        receiver_LLR_batch = []
+        Encode_CodeWord_batch = []
+        for _ in range(BATCH_SIZE):
+            receiver_LLR=[]
+            ######## produce Encode CodeWord ########
+            if G_file_name:
+                Information_Bit = np.random.randint(0, 2, size=(1, G_rowsize))  # [0~2) 的隨機值 = 0、1
+                Encode_CodeWord = np.dot(Information_Bit,G_matrix) % 2
+                Encode_CodeWord = Encode_CodeWord[0].tolist()
+            else:
+                Encode_CodeWord.clear()
+                for i in range(parity_check_matrix_colsize):
+                    Encode_CodeWord.append(0)
+            ########################################
+            ######## Convert to receiver LLR ########
+            for i in range(0,parity_check_matrix_colsize):    
+                receiver_codeword = -2*Encode_CodeWord[i] + 1 + sigma*generate_gaussian_noise()
+                receiver_LLR.append(2*receiver_codeword/(sigma**2))
+                # receiver_LLR.append(1) # 測適用
+            #########################################
+            receiver_LLR_batch.append(receiver_LLR)
+            Encode_CodeWord_batch.append(Encode_CodeWord)
 
         ############## list to tensor ##############
-        receiver_LLR_tensor = torch.tensor(receiver_LLR, dtype=torch.float32).unsqueeze(0).to(device)
+        receiver_LLR_tensor = torch.tensor(receiver_LLR_batch, dtype=torch.float32).to(device)
         ############## list to tensor ##############
+        
         with torch.no_grad():
             decode_codeword_tensor = model(receiver_LLR_tensor)
-        
-        decode_codeword = decode_codeword_tensor[0].squeeze().float().tolist()  # 確保 decode_codeword 是整數列表
-        # print(f"receiver_LLR : {receiver_LLR} | decode_codeword : {decode_codeword}")
-        for idx,bit in enumerate(decode_codeword) :
-            if bit<0.5:
-                decode_codeword[idx]=1
-            else:
-                decode_codeword[idx]=0
-        FLAG = False 
-        for i in range(len(decode_codeword)):
-            if decode_codeword[i]!=Encode_CodeWord[i]:
-                BER_COUNT+=1
-                FLAG=True
-        if FLAG == True:
-            FRAME_ERROR_COUNT+=1
-        FRAME_COUNT += 1
+        # print(decode_codeword_tensor)
+        decode_codeword_batch = decode_codeword_tensor.squeeze().float().tolist()  # 確保 decode_codeword 是整數列表
+        # print(decode_codeword_batch)
+        # exit(1)
+        for i in range(BATCH_SIZE):
+            FRAME_COUNT += 1
+            decode_codeword = decode_codeword_batch[i] 
+            Encode_CodeWord = Encode_CodeWord_batch[i]
+            # print(f"receiver_LLR : {receiver_LLR} | decode_codeword : {decode_codeword}")
+            for idx,bit in enumerate(decode_codeword):
+                if bit<=0.5:
+                    decode_codeword[idx]=1
+                else:
+                    decode_codeword[idx]=0
+            FLAG = False 
+            for i in range(len(decode_codeword)):
+                if decode_codeword[i]!=Encode_CodeWord[i]:
+                    BER_COUNT+=1
+                    FLAG=True
+            if FLAG == True:
+                FRAME_ERROR_COUNT += 1
+            
+
     FER.append(FRAME_ERROR_COUNT/FRAME_COUNT)
     BER.append(BER_COUNT/(parity_check_matrix_colsize*FRAME_COUNT))
     print("SNR:{} | FER : {} | BER : {} | Total_Frame : {}".format(SNR,FER[-1],BER[-1],FRAME_COUNT))
