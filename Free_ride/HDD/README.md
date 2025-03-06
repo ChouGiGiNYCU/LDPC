@@ -5,7 +5,7 @@
 
 ----
 ### Algrithm
-![SDD Algorithm](img\HDD_Alg.png)
+![SDD Algorithm](https://github.com/ChouGiGiNYCU/LDPC/tree/main/Free_ride/HDD/imgHDD_Alg.png)
 
 
 Reference : [Free-Ride paper](https://ieeexplore.ieee.org/document/9584875)

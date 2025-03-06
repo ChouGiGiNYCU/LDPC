@@ -3,9 +3,9 @@
 
 ----
 ### Algrithm
-![SDD Algorithm](img\SDD_Alg.png)
+![SDD Algorithm](https://github.com/ChouGiGiNYCU/LDPC/tree/main/Free_ride/SDD/img/SDD_Alg.png)
 #### Equation 43 - 45
-![SDD Algorithm](img\SDD_equation.png)
+![SDD Algorithm](https://github.com/ChouGiGiNYCU/LDPC/tree/main/Free_ride/SDD/img/SDD_equation.png)
 
 Reference : [Free-Ride paper](https://ieeexplore.ieee.org/document/9584875)
 
