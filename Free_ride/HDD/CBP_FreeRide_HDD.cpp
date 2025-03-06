@@ -7,7 +7,7 @@
 #include<string>
 #include "random_number_generator.h"
 #include "UseFuction.h"
-#include "FreeRide_func.h"
+#include "FreeRide_HDD_func.h"
 #include "PCM.h"
 
 // #define frame_error_lowwer_bound 400
@@ -55,7 +55,6 @@ int main(int argc,char* argv[]){
     cout << "PayLoad_Flag : " << PayLoad_Flag << endl;
     cout << "Extra G file : " << Extra_G_file << endl;
     cout << "Extra_Flag : " << Extra_Flag << endl;
-
     cout << "Iteration_limit : " << iteration_limit << endl;
     cout << "SNR_min : " << SNR_min << endl;
     cout << "SNR_max : " << SNR_max << endl;
