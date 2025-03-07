@@ -205,7 +205,6 @@ int main(int argc,char* argv[]){
             /* ----- Determine Extra BER ----- */
             bool extra_bit_error_flag = false;
             for(int i=0;i<Guess_Extra_Encode.size();i++){
-                
                 if(Guess_Extra_Encode[i]!=extra_Encode[i]){
                     Extra_Error_bits++;
                     extra_bit_error_flag = true;
@@ -220,8 +219,9 @@ int main(int argc,char* argv[]){
             it=0;
             bool payload_error_syndrome = true;
             bool payload_bit_error_flag=false;
+            int payload_error_bit = 0;
             while(it<iteration_limit && payload_error_syndrome){
-                
+                payload_error_bit = 0;
                 /* ------- CN update ------- */
                 for(int VN=0;VN<PayLoad_H.n;VN++){
                     for(int i=0;i<PayLoad_H.max_col_arr[VN];i++){
@@ -299,6 +299,7 @@ int main(int argc,char* argv[]){
                     if(payload_guess[VN]!=payload_Encode[VN]){
                         payload_bit_error_count[it]++;
                         payload_bit_error_flag=true;
+                        payload_error_bit++;
                     }
                 }
 
@@ -307,7 +308,7 @@ int main(int argc,char* argv[]){
             // 如果 syndorme check is ok ，但是codeword bit 有錯，代表解錯codeword ， BER[it+1:iteration_limit] += codeword length
             if(!payload_error_syndrome && payload_bit_error_flag){
                 for(int it_idx=it;it_idx<iteration_limit;it_idx++){
-                    payload_bit_error_count[it_idx] += PayLoad_H.n;
+                    payload_bit_error_count[it_idx] += payload_error_bit;
                 }
             }
 
