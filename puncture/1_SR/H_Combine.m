@@ -4,8 +4,8 @@ clear all;
 close all;
 %%
 H1_file = 'PEGReg504x1008.txt'; % payload data
-H2_file = 'H_10_5.txt'; % extra data
-H_combine_file = 'P1008_E10_1SR.txt';
+H2_file = 'H_96_48.txt'; % extra data
+H_combine_file = 'PCM_P1008_E96_1SR.txt';
 puncture_position_bits_file = ['Pos_', H_combine_file];
 H1 = readHFromFileByLine(H1_file);
 H2 = readHFromFileByLine(H2_file);
@@ -21,7 +21,8 @@ zero3 = zeros([H2_r H1_c]);
 zero4 = zeros([H2_r H2_c]);
 H_combine = [[H1,zero1,zero2];[zero3,H2,zero4]];
 
-punc_pos_bits = oneSR_method(H1,H2_c);
+% punc_pos_bits = oneSR_method(H1,H2_c);
+punc_pos_bits = maximize_oneSR_method(H1,H2_c);
 punc_payload_mat = zeros([H2_c,H1_c]);
 for r=1:H2_c
     punc_vn = punc_pos_bits(r);

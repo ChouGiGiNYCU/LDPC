@@ -9,7 +9,7 @@
 #include "UseFuction.h"
 
 
-#define frame_error_lowwer_bound 200
+#define frame_error_lowwer_bound 400
 double phi(double x){
     double yy = tanh(x / 2);
     if (fabs(yy) < 1e-14) 
@@ -128,8 +128,9 @@ int main(int argc,char* argv[]){
             it=0;
             bool error_syndrome = true;
             bool bit_error_flag=false;
+            int error_bit_cnt = 0;
             while(it<iteration_limit && error_syndrome){
-                
+                error_bit_cnt = 0;
                 /* ------- CN update ------- */
                 for(int VN=0;VN<H.n;VN++){
                     for(int i=0;i<H.max_col_arr[VN];i++){
@@ -140,22 +141,21 @@ int main(int argc,char* argv[]){
                             int other_VN = H.VN_2_CN_pos[CN][j];
                             if(other_VN == VN) continue; 
                             if(it==0){ //第一次迭帶就是 直接加上剛算好的receiver_LLR
-                                // phi_beta_sum += phi(abs(receiver_LLR[other_VN]));
-                                // alpha *= receiver_LLR[other_VN]>0?1:-1;
-                                 total_LLR *= tanh(0.5*(receiver_LLR[other_VN])); 
+                                phi_beta_sum += phi(abs(receiver_LLR[other_VN]));
+                                alpha *= receiver_LLR[other_VN]>0?1:-1;
+                                //  total_LLR *= tanh(0.5*(receiver_LLR[other_VN])); 
                             }else{
-                                // phi_beta_sum += phi(abs(VN_2_CN_LLR[CN][j]));
-                                // alpha *= VN_2_CN_LLR[CN][j]>0?1:-1;
-                                total_LLR *=tanh(0.5*VN_2_CN_LLR[CN][j]) ;
+                                phi_beta_sum += phi(abs(VN_2_CN_LLR[CN][j]));
+                                alpha *= VN_2_CN_LLR[CN][j]>0?1:-1;
+                                // total_LLR *=tanh(0.5*VN_2_CN_LLR[CN][j]) ;
                             }
                         }
-                        total_LLR = 2*atanh(total_LLR);
-                        CN_2_VN_LLR[VN][i] = total_LLR;
-                        // CN_2_VN_LLR[VN][i]= alpha * phi(phi_beta_sum);
+                        // total_LLR = 2*atanh(total_LLR);
+                        // CN_2_VN_LLR[VN][i] = total_LLR;
+                        CN_2_VN_LLR[VN][i]= alpha * phi(phi_beta_sum);
                     }
                 }
-                // cout << "CN update complete" <<endl;
-                // cin >> test;
+
                 /* ------- VN update ------- */
                 for(int CN=0;CN<H.m;CN++){
                     for(int i=0;i<H.max_row_arr[CN];i++){
@@ -180,8 +180,8 @@ int main(int argc,char* argv[]){
                     guess[VN]= (guess[VN]<0)?1:0;
                 }
                 
-                /* Determine if it is a syndrome -> guess * H^T = vector(0) */
-                /*
+                /* Early Stop - Determine if it is a syndrome -> guess * H^T = vector(0) */
+                error_syndrome = false;
                 for(int CN=0;CN<H.m;CN++){
                     int count=0;
                     for(int i=0;i<H.max_row_arr[CN];i++){
@@ -194,20 +194,22 @@ int main(int argc,char* argv[]){
                     }
                     error_syndrome = false;
                 }
-                */
+                
                 /* ----- Determine bit error ----- */
-                error_syndrome = false;
                 bit_error_flag=false;
                 for(int VN=0;VN<H.n;VN++){
                     if(guess[VN]!=transmit_codeword[VN]){
                         bit_error_count[it]++;
+                        error_bit_cnt++;
                         bit_error_flag=true;
-                        error_syndrome = true;
                     }
                 }
-                
                 it++;
-                
+            }
+            if(!error_syndrome && bit_error_flag){
+                for(int it_idx=it;it_idx<iteration_limit;it_idx++){
+                    bit_error_count[it_idx] += error_bit_cnt;
+                }
             }
             if(bit_error_flag){
                 frame_error+=1;
@@ -216,24 +218,15 @@ int main(int argc,char* argv[]){
         }
         clk_end=clock();
         double clk_duration = (double)(clk_end-clk_start)/CLOCKS_PER_SEC;
-        printf("SNR : %.2f  | FER : %.5e  | BER : %.5e(%d) | Time : %.3f | Total frame : %.0f\n",SNR,frame_error/frame_count,bit_error_count[it-1]/((double)H.n*frame_count),it,clk_duration,frame_count);
+        printf("SNR : %.2f  | FER : %.5e  | BER : %.5e(%d) | Time : %.3f | Total frame : %.0f\n",SNR,frame_error/frame_count,bit_error_count[iteration_limit-1]/((double)H.n*frame_count),iteration_limit-1,clk_duration,frame_count);
         outFile << SNR << ", " << frame_error/frame_count << ", ";
         for(int i=0;i<iteration_limit;i++){
             outFile << bit_error_count[i]/((double)H.n*frame_count) << ", ";
         }
         outFile <<endl;
-
-        // cout << "SNR : " << SNR << "| SNR_max : " << SNR_max <<endl;
-        if(SNR==SNR_max){
-            cout << "over the SNR_max" << endl;
-            break;
-        }
-        else if(SNR+SNR_ratio>SNR_max){
-            SNR=SNR_max;
-        }else{
-            SNR=SNR+SNR_ratio;
-        }
         
+        if(SNR==SNR_max) break;
+        SNR = min(SNR+SNR_ratio,SNR_max);
     }
     outFile.close();
     /* ----------- free all memory ----------- */

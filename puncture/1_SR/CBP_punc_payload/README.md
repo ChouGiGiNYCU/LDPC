@@ -10,7 +10,7 @@ Puncture method 採用 1-SR 的概念(不是照paper的Alg) 去做 。
 ## 檔案
 
 - `PEGReg504x1008.txt` : LDPC PCM file
-- `Pos_P1008_E10_1SR.txt` : Puncture 的 VN Node (start idx = 1)
+- `Pos_P1008_E10_1SR.txt` : Puncture 的 VN Node (start idx = 1) (Payload:PEG1008 , Extra:H10)
 
 ---
 

@@ -31,8 +31,8 @@ vector<int> MinHammingWeight(vector<vector<bool>>& G,const struct parity_check& 
     vector<int> PayLoad_Encode = Sup_Encode;
     vector<int> Extra_Encode_copy;
     // 找出所有Extra CodeWord 所有組合，且疊加相乘後 Hamming weight 最小的 (代表 minimun number of unsatisfied parity checks)
-    for(int i=0;i<AllPossible;i++){
-        vector<bool> bin = intToBinaryVector(i,info_bits);
+    for(int k=0;k<AllPossible;k++){
+        vector<bool> bin = intToBinaryVector(k,info_bits);
         vector<int> Extra_Encode = Vector_Dot_Matrix_Int(bin,G);
 
         

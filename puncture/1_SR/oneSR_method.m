@@ -6,8 +6,8 @@ function position = oneSR_method(H,puncture_bits_num)
     while idx<puncture_bits_num
         remain_vns = cols - size(non_using_vn,1);
         if remain_vns < puncture_bits_num - idx
-            disp("Can't find enough puncture node \n");
-            return;
+            disp("Can't find enough 1-SR puncture node \n");
+            break;
         end
         VN = randi(cols); % produce 1:cols random integer
         if ismember(VN, non_using_vn) && ismember(VN,puncture)

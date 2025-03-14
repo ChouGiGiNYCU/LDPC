@@ -32,11 +32,11 @@ vector<int> FindLargeLLR(vector<vector<bool>>& G,const struct parity_check& PayL
     vector<int> Extra_Encode_copy;
     double Large_LLR_sum = DBL_MIN; // double max
     // 找出所有Extra CodeWord 所有組合，且疊加後，去找出最佳的check equations的LLR
-    for(int i=0;i<AllPossible;i++){
+    for(int k=0;k<AllPossible;k++){
         // copy the recieve_LLR
         receive_LLR_copy = receive_LLR;
         // find all possible encode codeword
-        vector<bool> bin = intToBinaryVector(i,info_bits);
+        vector<bool> bin = intToBinaryVector(k,info_bits);
         vector<int> Extra_Encode = Vector_Dot_Matrix_Int(bin,G);
         for(int i=0;i<Extra_Encode.size();i++) Extra_Encode[i] = Extra_Encode[i]%2;
         // do LLR count 

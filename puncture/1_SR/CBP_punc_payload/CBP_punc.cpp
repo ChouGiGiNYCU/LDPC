@@ -35,7 +35,7 @@ int main(int argc,char* argv[]){
     if(argc < 2){
         cout << "** Error ---- No file in" << endl; 
     }
-    double frame_error_lowwer_bound = 400;
+    double frame_error_lowwer_bound = 50;
     string file_name = argv[1];
     string file_name_out = argv[2];
     string G_file_path  = argv[3];
@@ -111,7 +111,6 @@ int main(int argc,char* argv[]){
             bit_error_count[i]=0;
         }
         clk_start = clock();
-        
         while(frame_error < frame_error_lowwer_bound){
             // 判斷是否用encode跑測試
             if(Encode_Flag){
@@ -140,10 +139,12 @@ int main(int argc,char* argv[]){
                 receiver_LLR[pos] = 0;
             }
             it=0;
+            
             bool error_syndrome = true;
             bool bit_error_flag=false;
+            int error_bit_cnt = 0;
             while(it<iteration_limit && error_syndrome){
-                
+                error_bit_cnt = 0;
                 /* ------- CN update ------- */
                 for(int VN=0;VN<H.n;VN++){
                     for(int i=0;i<H.max_col_arr[VN];i++){
@@ -156,10 +157,12 @@ int main(int argc,char* argv[]){
                             if(it==0){ //第一次迭帶就是 直接加上剛算好的receiver_LLR
                                 // phi_beta_sum += phi(abs(receiver_LLR[other_VN]));
                                 // alpha *= receiver_LLR[other_VN]>0?1:-1;
-                                 total_LLR *= tanh(0.5*(receiver_LLR[other_VN])); 
+                                if(receiver_LLR[other_VN]==0) continue;
+                                total_LLR *= tanh(0.5*(receiver_LLR[other_VN])); 
                             }else{
                                 // phi_beta_sum += phi(abs(VN_2_CN_LLR[CN][j]));
                                 // alpha *= VN_2_CN_LLR[CN][j]>0?1:-1;
+                                if(VN_2_CN_LLR[CN][j]==0) continue;
                                 total_LLR *=tanh(0.5*VN_2_CN_LLR[CN][j]) ;
                             }
                         }
@@ -216,11 +219,15 @@ int main(int argc,char* argv[]){
                     if(guess[VN]!=transmit_codeword[VN]){
                         bit_error_count[it]++;
                         bit_error_flag=true;
+                        error_bit_cnt++;
                     }
                 }
-                
                 it++;
-                
+            }
+            if(!error_syndrome && bit_error_flag){
+                for(int it_idx=it;it_idx<iteration_limit;it_idx++){
+                    bit_error_count[it_idx] += error_bit_cnt;
+                }
             }
             if(bit_error_flag){
                 frame_error+=1;
@@ -229,6 +236,7 @@ int main(int argc,char* argv[]){
         }
         clk_end=clock();
         double clk_duration = (double)(clk_end-clk_start)/CLOCKS_PER_SEC;
+
         printf("SNR : %.2f  | FER : %.5e  | BER : %.5e(%d) | Time : %.3f | Total frame : %.0f\n",SNR,frame_error/frame_count,bit_error_count[iteration_limit-1]/((double)H.n*frame_count),it,clk_duration,frame_count);
         outFile << SNR << ", " << frame_error/frame_count << ", ";
         for(int i=0;i<iteration_limit;i++){

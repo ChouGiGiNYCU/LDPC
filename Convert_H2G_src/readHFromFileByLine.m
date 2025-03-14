@@ -1,35 +1,41 @@
-function H_matrix = readHFromFileByLine(filename)
-    fileID = fopen(filename, 'r');
+function H_matrix = readHFromFileByLine(file_name)
+    fileID = fopen(file_name, 'r');
     if fileID == -1
         error('無法打開文件');
     end
     % Read the first two numbers that specify the dimensions
-    H_size = fscanf(fileID, '%d', 2);
+    line = fgetl(fileID);
+    H_size = sscanf(line, '%d'); % 解析該行的數字，轉換為數字陣列
     cols = H_size(1);
     rows= H_size(2);
     disp(H_size.')
-    max_weights  = fscanf(fileID, '%d', 2);
+    line = fgetl(fileID); % 讀取最大權重
+    max_weights = sscanf(line, '%d');
     disp(max_weights.')
-    % disp(max_cols_weight)
+    
     % Read the next part which gives row weights
-    cols_weights = fscanf(fileID, '%d', cols);
-    rows_weights = fscanf(fileID, '%d', rows);
+    line = fgetl(fileID);
+    cols_weights = sscanf(line, '%d');
+    disp(cols_weights.');
+
+    line = fgetl(fileID);
+    rows_weights = sscanf(line, '%d');
     disp(rows_weights.')
-    disp(cols_weights.')
+    
     % Initialize the H matrix with zeros
     H_matrix = zeros(rows, cols);
     
     % Read the non-zero values and their positions
     for col = 1:cols
-        % Read the number of non-zero elements in the current row
-        non_zero_elements = cols_weights(col);
-        
-        % Read the column positions of the non-zero elements in the current row
-        rows_positions = fscanf(fileID, '%d', non_zero_elements);
+        line = fgetl(fileID);
+        non_zero_positions = sscanf(line, '%d');
+     
         
         % Fill the H_matrix
-        for j = 1:non_zero_elements
-            H_matrix(rows_positions(j), col) = 1; % Set the appropriate positions to 1
+        for row=non_zero_positions.'
+            if row~=0
+                H_matrix(row, col) = 1; % Set the appropriate positions to 1
+            end
         end
     end
     
