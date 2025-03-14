@@ -211,11 +211,13 @@ int main(int argc,char* argv[]){
             bool extra_error_syndrome = true;
             bool payload_bit_error_flag=false;
             bool extra_bit_error_flag=false;
+            int extra_error_bit = 0 , payload_error_bit = 0;
             // for(int i=0;i<H.n;i++) totalLLR[i]=0;
             // for(int i=0;i<H.n;i++) for(int j=0;j<H.max_col_arr[i];j++) CN_2_VN_LLR[i][j] = 0;
             // for(int i=0;i<H.m;i++) for(int j=0;j<H.max_row_arr[i];j++) VN_2_CN_LLR[i][j] = 0;
             while(it<iteration_limit && (payload_error_syndrome || extra_error_syndrome)){
-                
+                extra_error_bit = 0;
+                payload_error_bit = 0;
                 /* ------- CN update ------- */
                 for(int VN=0;VN<H.n;VN++){
                     for(int i=0;i<H.max_col_arr[VN];i++){
@@ -244,8 +246,6 @@ int main(int argc,char* argv[]){
                         CN_2_VN_LLR[VN][i]= alpha * phi(phi_beta_sum);
                     }
                 }
-                // cout << "CN update complete" <<endl;
-                // cin >> test;
                 /* ------- VN update ------- */
                 for(int CN=0;CN<H.m;CN++){
                     for(int i=0;i<H.max_row_arr[CN];i++){
@@ -311,6 +311,7 @@ int main(int argc,char* argv[]){
                     if(payload_guess[VN]!=payload_Encode[VN]){
                         payload_bit_error_count[it]++;
                         payload_bit_error_flag=true;
+                        payload_error_bit++;
                     }
                 }
                 /* ----- Determine Extra BER ----- */
@@ -319,22 +320,21 @@ int main(int argc,char* argv[]){
                     if(extra_guess[VN]!=extra_Encode[VN]){
                         extra_bit_error_count[it]++;
                         extra_bit_error_flag=true;
+                        extra_error_bit++;
                     }
                 }
-                
                 it++;
-                
             }
             // 如果 syndorme check is ok ，但是codeword bit 有錯，代表解錯codeword ， BER[it+1:iteration_limit] += codeword length
             if(!payload_error_syndrome && payload_bit_error_flag){
                 for(int it_idx=it;it_idx<iteration_limit;it_idx++){
-                    payload_bit_error_count[it_idx] += PayLoad_H.n;
+                    payload_bit_error_count[it_idx] += payload_error_bit;
                 }
             }
             // 如果 syndorme check is ok ，但是codeword bit 有錯，代表解錯codeword ， BER[it+1:iteration_limit] += codeword length
             if(!extra_error_syndrome && extra_bit_error_flag){
                 for(int it_idx=it;it_idx<iteration_limit;it_idx++){
-                    extra_bit_error_count[it_idx] += Extra_H.n;
+                    extra_bit_error_count[it_idx] += extra_error_bit;
                 }
             }
             if(payload_bit_error_flag){
@@ -347,8 +347,8 @@ int main(int argc,char* argv[]){
         }
         clk_end=clock();
         double clk_duration = (double)(clk_end-clk_start)/CLOCKS_PER_SEC;
-        printf("PayLoad - SNR : %.2f  | FER : %.5e  | BER : %.5e(%d) | Time : %.3f | Total frame : %.0f\n",SNR,payload_frame_error/frame_count,payload_bit_error_count[iteration_limit-1]/((double)PayLoad_H.n*frame_count),it,clk_duration,frame_count);
-        printf("Extra   - SNR : %.2f  | FER : %.5e  | BER : %.5e(%d) | Time : %.3f | Error frame : %.0f | BER_num : %.0f\n",SNR,extra_frame_error/frame_count,extra_bit_error_count[iteration_limit-1]/((double)Extra_H.n*frame_count),it,clk_duration,extra_frame_error,extra_bit_error_count[iteration_limit-1]);
+        printf("PayLoad - SNR : %.2f  | FER : %.5e  | BER : %.5e(%d) | Time : %.3f | Total frame : %.0f\n",SNR,payload_frame_error/frame_count,payload_bit_error_count[iteration_limit-1]/((double)PayLoad_H.n*frame_count),iteration_limit,clk_duration,frame_count);
+        printf("Extra   - SNR : %.2f  | FER : %.5e  | BER : %.5e(%d) | Time : %.3f | Error frame : %.0f | BER_num : %.0f\n",SNR,extra_frame_error/frame_count,extra_bit_error_count[iteration_limit-1]/((double)Extra_H.n*frame_count),iteration_limit,clk_duration,extra_frame_error,extra_bit_error_count[iteration_limit-1]);
         
         // Write PayLoad Performance to csv
         PayLoad_outfile << SNR << ", " << payload_frame_error/frame_count << ", ";
