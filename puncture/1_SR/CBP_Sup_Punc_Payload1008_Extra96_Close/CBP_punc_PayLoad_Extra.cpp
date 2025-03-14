@@ -122,7 +122,8 @@ int main(int argc,char* argv[]){
     Extra_outfile << endl;
     
     double SNR = SNR_min;
-    double code_rate = (double)(PayLoad_H.n-PayLoad_H.m)/(double)PayLoad_H.n; // 用原本的payload 算 coderate
+    // ((Payload info) + length(Extra Codeword))/ length(Payload CodeWord) 
+    double code_rate = (double)(PayLoad_H.n-PayLoad_H.m+Extra_H.n)/(double)PayLoad_H.n; 
     
     int *transmit_codeword = (int*)calloc(H.n,sizeof(int));
     double *receiver_LLR = (double*)malloc(H.n*sizeof(double));
@@ -213,11 +214,13 @@ int main(int argc,char* argv[]){
             bool payload_bit_error_flag=false;
             bool extra_bit_error_flag=false;
             bool payload_correct_flag = false; // 如果 payload syndrome 是全零，代表 codeword 是個合法的，就開通往extra 傳送 message
+            int payload_error_bit = 0 , extra_error_bit=0;
             for(int i=0;i<H.n;i++) totalLLR[i]=0;
             for(int i=0;i<H.n;i++) for(int j=0;j<H.max_col_arr[i];j++) CN_2_VN_LLR[i][j] = 0;
             for(int i=0;i<H.m;i++) for(int j=0;j<H.max_row_arr[i];j++) VN_2_CN_LLR[i][j] = 0;
             while(it<iteration_limit && (payload_error_syndrome || extra_error_syndrome)){
-                
+                payload_error_bit = 0;
+                extra_error_bit = 0;
                 /* ------- CN update ------- */
                 for(int VN=0;VN<H.n;VN++){
                     // 不把訊息傳到Extra 那邊
@@ -312,7 +315,7 @@ int main(int argc,char* argv[]){
                     }
                     extra_error_syndrome = false;
                 }
-                if(payload_correct_flag==false) extra_error_syndrome = true;
+                if(payload_correct_flag==false && it<iteration_open) extra_error_syndrome = true;
                 if(payload_error_syndrome==false) payload_correct_flag = true;
                 /* ----- Determine PayLoad BER ----- */
                 payload_bit_error_flag=false;
@@ -320,6 +323,7 @@ int main(int argc,char* argv[]){
                     if(payload_guess[VN]!=payload_Encode[VN]){
                         payload_bit_error_count[it]++;
                         payload_bit_error_flag=true;
+                        payload_error_bit++;
                     }
                 }
                 /* ----- Determine Extra BER ----- */
@@ -328,7 +332,7 @@ int main(int argc,char* argv[]){
                     if(extra_guess[VN]!=extra_Encode[VN]){
                         extra_bit_error_count[it]++;
                         extra_bit_error_flag=true;
-                        
+                        extra_error_bit++;
                     }
                     
                 }  
@@ -338,14 +342,13 @@ int main(int argc,char* argv[]){
             // 如果 syndorme check is ok ，但是codeword bit 有錯，代表解錯codeword ， BER[it+1:iteration_limit] += codeword length
             if(!payload_error_syndrome && payload_bit_error_flag){
                 for(int it_idx=it;it_idx<iteration_limit;it_idx++){
-                    payload_bit_error_count[it_idx] += PayLoad_H.n;
+                    payload_bit_error_count[it_idx] += payload_error_bit;
                 }
             }
             // 如果 syndorme check is ok ，但是codeword bit 有錯，代表解錯codeword ， BER[it+1:iteration_limit] += codeword length
             if(!extra_error_syndrome && extra_bit_error_flag){
-                
                 for(int it_idx=it;it_idx<iteration_limit;it_idx++){
-                    extra_bit_error_count[it_idx] += Extra_H.n;
+                    extra_bit_error_count[it_idx] += extra_error_bit;
                 }
             }
             // Frame count
