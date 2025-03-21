@@ -123,7 +123,7 @@ int main(int argc,char* argv[]){
     
     double SNR = SNR_min;
     // ((Payload info) + length(Extra Codeword))/ length(Payload CodeWord) 
-    double code_rate = (double)(PayLoad_H.n-PayLoad_H.m+Extra_H.n)/(double)PayLoad_H.n; 
+    double code_rate = (double)(PayLoad_H.n-PayLoad_H.m+Extra_G.size())/(double)PayLoad_H.n; 
     
     int *transmit_codeword = (int*)calloc(H.n,sizeof(int));
     double *receiver_LLR = (double*)malloc(H.n*sizeof(double));

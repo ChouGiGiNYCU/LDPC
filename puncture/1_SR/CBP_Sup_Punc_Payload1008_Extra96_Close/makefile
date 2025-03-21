@@ -3,7 +3,7 @@ CFLAGS = -Wfatal-errors -std=c++11
 TARGET = CBP_punc_PayLoad_Extra
 SRCS = CBP_punc_PayLoad_Extra.cpp
 ##########################
-SNR_min = 1
+SNR_min = 2.75
 SNR_max = 3
 SNR_Ratio = 0.25
 Iteration_Limit = 200
@@ -11,8 +11,8 @@ Iteration_Limit = 200
 payload_PCM = /mnt/c/Users/USER/Desktop/LDPC/PCM/PEGReg504x1008.txt
 extra_PCM = /mnt/c/Users/USER/Desktop/LDPC/PCM/H_96_48.txt
 Combine_PCM = PCM_P1008_E96_1SR.txt
-PayLoad_out_file = Punc_1SR_P1008_E96_PayLoad_it$(Iteration_Limit)_CodeRateFix.csv
-Extra_out_file = Punc_1SR_P1008_E96_Extra_it$(Iteration_Limit)_CodeRateFix.csv
+PayLoad_out_file = Punc_1SR_P1008_E96_PayLoad_it$(Iteration_Limit)_CodeRateFix_v1.csv
+Extra_out_file = Punc_1SR_P1008_E96_Extra_it$(Iteration_Limit)_CodeRateFix_v1.csv
 puncture_pos_file = Pos_PCM_P1008_E96_1SR.txt
 ############# G setting ###########
 payload_Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/PEGReg504x1008_G.txt
