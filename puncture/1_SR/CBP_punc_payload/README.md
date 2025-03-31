@@ -1,8 +1,8 @@
 # Puncture LDPC
 
-在 `PEGReg504x1008` LDPC 上選取幾個 VN 做puncture(LLR=0) ， 來看對於performance的影響。
+在 `PEGReg504x1008 LDPC` 上選取幾個 `VN` 做 `puncture (LLR=0)` ， 來看對於performance的影響。
 
-Puncture method 採用 1-SR 的概念(不是照paper的Alg) 去做 。
+`Puncture method` 採用 1-SR 的概念(不是照paper的Alg) 去做 。
 
 [paper](https://ieeexplore.ieee.org/document/6398903)
 
@@ -10,7 +10,7 @@ Puncture method 採用 1-SR 的概念(不是照paper的Alg) 去做 。
 ## 檔案
 
 - `PEGReg504x1008.txt` : LDPC PCM file
-- `Pos_P1008_E10_1SR.txt` : Puncture 的 VN Node (start idx = 1) (Payload:PEG1008 , Extra:H10)
+- `Pos_P1008_E10_1SR.txt` : Puncture 的 VN Node (start idx = 1) `(Payload:PEG1008 , Extra:H10)`
 
 ---
 
@@ -68,11 +68,4 @@ for(int i=0;i<punc_map.size();i++){
 Linux:
 ```
 make BP
-```
-
-Cmd : 
-``` bash =
-g++  CBP_punc.cpp -o  CBP_punc
-
-CBP_punc.exe PEGReg504x1008.txt  CBP_PEG504X1008.csv PEGReg504x1008_G.txt  0 200 1 4 0.2  Pos_P1008_E10_1SR.txt
 ```
