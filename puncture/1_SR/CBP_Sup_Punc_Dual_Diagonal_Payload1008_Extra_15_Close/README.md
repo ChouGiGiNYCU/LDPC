@@ -3,7 +3,7 @@
 
 當 `iteration` 小於 `iteration_limit` 且 `PayLoad_syndrome` 非全零的時候，訊息只在`PayLoad`裡面做傳遞。
 
-`Dual-Diagonal` 的結構讓疊加後的位元更有結構性。
+`Dual-Diagonal` 的結構讓疊加後的位元之間更有結構性。
 
 `Dual-Diagonal Matrix : `
 |     |     |     |
@@ -83,6 +83,16 @@ for(int i=0;i<Extra_H.n;i++){
     prev_pos = xor_pos; 
 }
 ```
+---
+
+## Makefile 參數
+``` python =
+Open_Iteration = 0 # Payload 和 Extra 會同時解
+Open_Iteration = n # 當 it<n & PayLoad_syndrome 非全零的時候，訊息只在PayLoad裡面做傳遞。
+```
+
+---
+
 ## 執行程式
 可以使用 `Ubuntu` 執行 `makefile`
 
