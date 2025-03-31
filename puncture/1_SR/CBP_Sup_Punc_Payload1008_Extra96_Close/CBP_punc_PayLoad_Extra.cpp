@@ -5,9 +5,9 @@
 #include<stdlib.h>
 #include<stdio.h>
 #include<string>
-#include "random_number_generator.h"
 #include "UseFuction.h"
-
+#include "random_number_generator.h"
+#include <boost/dynamic_bitset.hpp>
 
 // #define frame_error_lowwer_bound 400
 double phi(double x){
@@ -28,7 +28,7 @@ struct parity_check{
 
 void FreeAllH(struct parity_check*H);
 void Read_File_H(struct parity_check *H,string& file_name_in);
-vector<vector<bool>> Read_File_G(string& file_name);
+vector<boost::dynamic_bitset<>> Read_File_G(string& file_name);
 vector<int> Read_punc_pos(string file,vector<bool>& punc_pos,int  extra_nums);
 
 int main(int argc,char* argv[]){
@@ -86,15 +86,19 @@ int main(int argc,char* argv[]){
     punc_map = Read_punc_pos(puncture_pos_file,punc_pos,Extra_H.n);
     cout << "Puncture position file read success !!" << endl;
     // define PayLoad_G
-    vector<vector<bool>> PayLoad_G;
+    vector<boost::dynamic_bitset<>> Payload_Origin_G;
+    vector<boost::dynamic_bitset<>> Payload_Transpose_G;
     if(PayLoad_Flag){
-        PayLoad_G = Read_File_G(PayLoad_G_file);
+        Payload_Origin_G = Read_File_G(PayLoad_G_file);
+        Payload_Transpose_G = Transpose_Matrix(Payload_Origin_G); 
         cout << "PayLoad_G file read success!!" << endl;
     }
     // define Extra_G
-    vector<vector<bool>> Extra_G;
+    vector<boost::dynamic_bitset<>> Extra_Origin_G;
+    vector<boost::dynamic_bitset<>> Extra_Transpose_G;
     if(Extra_Flag){
-        Extra_G = Read_File_G(Extra_G_file);
+        Extra_Origin_G = Read_File_G(Extra_G_file);
+        Extra_Transpose_G = Transpose_Matrix(Extra_Origin_G); 
         cout << "Extra_G file read success!!" << endl;
     }
     // create payload out csv
@@ -123,66 +127,70 @@ int main(int argc,char* argv[]){
     
     double SNR = SNR_min;
     // ((Payload info) + length(Extra Codeword))/ length(Payload CodeWord) 
-    double code_rate = (double)(PayLoad_H.n-PayLoad_H.m+Extra_G.size())/(double)PayLoad_H.n; 
+    double code_rate = (double)(PayLoad_H.n-PayLoad_H.m+Extra_Origin_G.size())/(double)PayLoad_H.n; 
+    cout << "CodeRate : " << code_rate << "\n";
     
-    int *transmit_codeword = (int*)calloc(H.n,sizeof(int));
-    double *receiver_LLR = (double*)malloc(H.n*sizeof(double));
-    double ** CN_2_VN_LLR = (double**)malloc(sizeof(double*)*H.n);
-    for(int i=0;i<H.n;i++) CN_2_VN_LLR[i]=(double*)calloc(H.max_col_arr[i],sizeof(double));
-    double ** VN_2_CN_LLR = (double**)malloc(sizeof(double*)*H.m);
-    for(int i=0;i<H.m;i++) VN_2_CN_LLR[i]=(double*)calloc(H.max_row_arr[i],sizeof(double));
+
+    vector<vector<double>> CN_2_VN_LLR(H.n);  // Vector of vectors for CN to VN LLR
+    vector<vector<double>> VN_2_CN_LLR(H.m);  // Vector of vectors for VN to CN LLR
+    // Initialize each row of the vectors with the appropriate size
+    for (int i = 0; i < H.n; i++) {
+        CN_2_VN_LLR[i].resize(H.max_col_arr[i], 0.0);  // Resize each row to match max_col_arr[i] and initialize with 0.0
+    }
+    for (int i = 0; i < H.m; i++) {
+        VN_2_CN_LLR[i].resize(H.max_row_arr[i], 0.0);  // Resize each row to match max_row_arr[i] and initialize with 0.0
+    }
     
-    double *payload_guess = (double*)malloc(sizeof(double)*PayLoad_H.n);
-    double *extra_guess = (double*)malloc(sizeof(double)*Extra_H.n);
+    vector<double> receiver_LLR(H.n,0); 
+    vector<double> payload_bit_error_count(iteration_limit,0);
+    vector<double> extra_bit_error_count(iteration_limit,0);
+    vector<double> totalLLR(H.n,0);
+
+    boost::dynamic_bitset<> transmit_codeword(H.n);
+    boost::dynamic_bitset<> payload_info(Payload_Origin_G.size());
+    boost::dynamic_bitset<> extra_info(Extra_Origin_G.size());
+    boost::dynamic_bitset<> payload_Encode(PayLoad_H.n);
+    boost::dynamic_bitset<> extra_Encode(Extra_H.n);
+    boost::dynamic_bitset<> payload_guess(PayLoad_H.n);
+    boost::dynamic_bitset<> extra_guess(Extra_H.n);
     
-    double *payload_bit_error_count = (double*)malloc(iteration_limit*sizeof(double));
-    double *extra_bit_error_count = (double*)malloc(iteration_limit*sizeof(double));
-    double *totalLLR = (double*)malloc(H.n*sizeof(double));
-    vector<bool> payload_info((PayLoad_G.size()));
-    vector<bool> extra_info((Extra_G.size()));
-    vector<int> payload_Encode(PayLoad_H.n,0);
-    vector<int> extra_Encode(Extra_H.n,0);
     clock_t  clk_start,clk_end;
     while(SNR <= SNR_max){
         double sigma = sqrt(1/(2*code_rate*pow(10,SNR/10.0)));
         double frame_count=0;
         double payload_frame_error=0,extra_frame_error=0;
         int it;
-        for(int i=0;i<iteration_limit;i++) payload_bit_error_count[i]=0;
-        for(int i=0;i<iteration_limit;i++) extra_bit_error_count[i]=0;
+        fill(payload_bit_error_count.begin(),payload_bit_error_count.end(),0.0);
+        fill(extra_bit_error_count.begin(),extra_bit_error_count.end(),0.0);
         clk_start = clock();
         while(payload_frame_error < frame_error_lowwer_bound){
             // printf("Frame : %f | Error_Frame : %f \n",frame_count,payload_frame_error);
             // 處理 Payload CodeWord 是zero 還是Encode
             if(PayLoad_Flag){
-                for(int i=0;i<PayLoad_G.size();i++){
-                    payload_info[i] = random_generation()>0.5?1:0;
+                for(int i=0;i<Payload_Origin_G.size();i++){
+                    payload_info[i] = random_generation();
                 }
-                payload_Encode = Vector_Dot_Matrix_Int(payload_info,PayLoad_G);
-                for(int i=0;i<payload_Encode.size();i++){
-                    payload_Encode[i] = payload_Encode[i]%2;
-                }
+                GF2_Mat_Vec_Dot(payload_info,Payload_Transpose_G,payload_Encode);
+            }else{
+                payload_Encode.reset();
             }
             // 處理 Extra CodeWord 是zero 還是Encode
             if(Extra_Flag){
-                for(int i=0;i<Extra_G.size();i++){
-                    extra_info[i] = random_generation()>0.5?1:0;
+                for(int i=0;i<Extra_Origin_G.size();i++){
+                    extra_info[i] = random_generation();
                 }
-                extra_Encode = Vector_Dot_Matrix_Int(extra_info,Extra_G);
-                for(int i=0;i<extra_Encode.size();i++){
-                    extra_Encode[i] = extra_Encode[i]%2;
-                }
+                GF2_Mat_Vec_Dot(extra_info,Extra_Transpose_G,extra_Encode);
+            }else{
+                extra_Encode.reset();
             }
             
             // PayLoad xor Extra
             for(int i=0;i<PayLoad_H.n;i++){
-                if(PayLoad_Flag) transmit_codeword[i] = payload_Encode[i]%2;
-                else transmit_codeword[i] = 0;
+                transmit_codeword[i] = payload_Encode[i];
             }
             for(int i=0;i<Extra_H.n;i++){
                 int xor_pos = punc_map[i];
-                if(Extra_Flag) 
-                    transmit_codeword[xor_pos] = (transmit_codeword[xor_pos] + (extra_Encode[i]%2))%2; 
+                transmit_codeword[xor_pos] = transmit_codeword[xor_pos] ^ extra_Encode[i]; 
             }
            
             // Count LLR
@@ -190,7 +198,7 @@ int main(int argc,char* argv[]){
                 // Sum_Product_Algorithm 是 soft decision 所以在調變的時候解
                 // BPSK -> {0->1}、{1->-1}
                 // double receiver_codeword=(-2*transmit_codeword[i]+1)/sigma + gasdev(); // power up
-                double receive_value=(double)(-2*transmit_codeword[i]+1) + sigma*gasdev(); // fixed power
+                double receive_value=static_cast<double>(-2*transmit_codeword[i]+1) + sigma*gasdev(); // fixed power
                 receiver_LLR[i]=2*receive_value/pow(sigma,2); 
             }
             
@@ -215,9 +223,9 @@ int main(int argc,char* argv[]){
             bool extra_bit_error_flag=false;
             bool payload_correct_flag = false; // 如果 payload syndrome 是全零，代表 codeword 是個合法的，就開通往extra 傳送 message
             int payload_error_bit = 0 , extra_error_bit=0;
-            for(int i=0;i<H.n;i++) totalLLR[i]=0;
-            for(int i=0;i<H.n;i++) for(int j=0;j<H.max_col_arr[i];j++) CN_2_VN_LLR[i][j] = 0;
-            for(int i=0;i<H.m;i++) for(int j=0;j<H.max_row_arr[i];j++) VN_2_CN_LLR[i][j] = 0;
+            fill(totalLLR.begin(),totalLLR.end(),0.0);
+            for(auto& row : CN_2_VN_LLR)  fill(row.begin(), row.end(), 0.0);
+            for(auto& row : VN_2_CN_LLR)  fill(row.begin(), row.end(), 0.0);
             while(it<iteration_limit && (payload_error_syndrome || extra_error_syndrome)){
                 payload_error_bit = 0;
                 extra_error_bit = 0;
@@ -319,23 +327,18 @@ int main(int argc,char* argv[]){
                 if(payload_error_syndrome==false) payload_correct_flag = true;
                 /* ----- Determine PayLoad BER ----- */
                 payload_bit_error_flag=false;
-                for(int VN=0;VN<PayLoad_H.n;VN++){
-                    if(payload_guess[VN]!=payload_Encode[VN]){
-                        payload_bit_error_count[it]++;
-                        payload_bit_error_flag=true;
-                        payload_error_bit++;
-                    }
-                }
+                auto payload_check_result =  payload_guess ^ payload_Encode;
+                payload_error_bit = payload_check_result.count();
+                if(payload_error_bit>0) payload_bit_error_flag = true;
+                payload_bit_error_count[it] += static_cast<double>(payload_error_bit); 
+                
                 /* ----- Determine Extra BER ----- */
                 extra_bit_error_flag=false;
-                for(int VN=0;VN<Extra_H.n;VN++){
-                    if(extra_guess[VN]!=extra_Encode[VN]){
-                        extra_bit_error_count[it]++;
-                        extra_bit_error_flag=true;
-                        extra_error_bit++;
-                    }
-                    
-                }  
+                auto extra_check_result =  extra_guess ^ extra_Encode;
+                extra_error_bit = extra_check_result.count();
+                if(extra_error_bit>0) extra_bit_error_flag = true;
+                extra_bit_error_count[it] += static_cast<double>(extra_error_bit);
+               
                 
                 it++;
             }
@@ -402,16 +405,6 @@ int main(int argc,char* argv[]){
     /* ----------- free all memory ----------- */
     cout << "In main Free \n";
     FreeAllH(&H);
-    free(transmit_codeword);
-    free(receiver_LLR);
-    for(int i=0;i<H.n;i++) free(CN_2_VN_LLR[i]);
-    free(CN_2_VN_LLR);
-    for(int i=0;i<H.m;i++) free(VN_2_CN_LLR[i]);
-    free(VN_2_CN_LLR);
-    free(payload_guess);
-    free(extra_guess);
-    free(payload_bit_error_count);
-    free(extra_bit_error_count);
     return 0;
 }
 
@@ -520,33 +513,32 @@ vector<int> Read_punc_pos(string file,vector<bool>& punc_pos,int extra_nums){
     punc_file.close();
     return punc_map;
 }
-vector<vector<bool>> Read_File_G(string& file_name){
+
+
+vector<boost::dynamic_bitset<>> Read_File_G(string& file_name){
     ifstream file(file_name);
-    string line;
+    vector<boost::dynamic_bitset<>> G;
     vector<string> line_split;
-    int idx=0,n,k,max_col;
-    vector<vector<bool>> G;
+    string line;
     vector<int> max_col_map;
+    int idx = 0, max_col , n ,k;
     while (getline(file, line)) {
         line = strip(line);
-        // cout << line << endl;
         line_split = split(line,' ');
         if(idx==0){
             if(line_split.size()==2){
-                n = stoi(line_split[0]);
-                k = stoi(line_split[1]);
-                G = vector<vector<bool>>(k,vector<bool>(n,0));
-                cout << "G - n : " << n << " | k : " << k << "\n";
+                n = stoi(line_split[0]); // colsize 
+                k = stoi(line_split[1]); // rowsize
+                G = vector<boost::dynamic_bitset<>>(k, boost::dynamic_bitset<>(n));
             }else{
-                cerr << "First line(n,k) : " << line << " is not n,k !! \n";
+                cerr << "First line(n,k) : " << line << " is not n,k !!" << endl;
                 exit(1);
             }
         }else if(idx==1){
             if(line_split.size()==1){
-                max_col = stoi(line_split[0]);
-                cout << "max col : "  << max_col << "\n";
+                max_col = stoi(line_split[0]); // max_col_degree
             }else{
-                cerr << "Second line(maxcol) : " << line << " is not max_col !! \n" ;
+                cerr << "Second line(maxcol) : " << line << " is not max_col !!" << endl;
                 exit(1);
             }
         }else if(idx==2){
@@ -567,7 +559,7 @@ vector<vector<bool>> Read_File_G(string& file_name){
                     if(pos!=0) G[pos-1][idx-3]=true; // 1
                 }
             }else{
-                cerr << "Each Col 1 postion line : [" << line << "] postion length is not equal to " << max_col << " | length : " << line_split.size() << "\n";
+                cerr << "Each Col 1 postion line : [" << line << "] postion length is not equal to " << max_col << " | length : " << line_split.size() << endl;
                 exit(1); 
             }
         }
