@@ -1,5 +1,5 @@
 # Puncture LDPC
-在 `PEGReg504x1008` PayLoad LDPC Code 上面疊加 `H_63_45` Extra LDPC Code 做傳輸。把兩個 `PCM` 合併起來形成一個新的 `PCM` 把疊加的位置給 puncture ， 透過 BP 再把兩組 code 還原。
+在 `PEGReg504x1008` PayLoad LDPC Code 上面疊加 `BCH_63_45` Extra BCH Code 做傳輸。把兩個 `PCM` 合併起來形成一個新的 `PCM` 把疊加的位置給 puncture ， 透過 BP 再把兩組 code 還原。
 
 當 `iteration` 小於 `iteration_limit` 且 `PayLoad_syndrome` 非全零的時候，訊息只在`PayLoad`裡面做傳遞。
 
