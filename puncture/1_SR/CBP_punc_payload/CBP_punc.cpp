@@ -35,7 +35,7 @@ int main(int argc,char* argv[]){
     if(argc < 2){
         cout << "** Error ---- No file in" << endl; 
     }
-    double frame_error_lowwer_bound = 50;
+    double frame_error_lowwer_bound = 400;
     string file_name = argv[1];
     string file_name_out = argv[2];
     string G_file_path  = argv[3];
