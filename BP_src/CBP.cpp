@@ -5,8 +5,10 @@
 #include<stdlib.h>
 #include<stdio.h>
 #include<string>
-#include "random_number_generator.h"
 #include "UseFuction.h"
+#include "random_number_generator.h"
+
+
 
 
 #define frame_error_lowwer_bound 400
@@ -19,6 +21,7 @@ double phi(double x){
 // #define phi(x)  log((exp(x)+1)/(exp(x)-1+1e-14)) //CN update 精簡後的公式，1e-14是避免x=0，導致分母為零
 using namespace std;
 
+
 struct parity_check{
     int n,m,max_col_degree,max_row_degree;
     int *max_col_arr,*max_row_arr;
@@ -28,8 +31,8 @@ struct parity_check{
 
 void FreeAllH(struct parity_check*H);
 void Read_File_H(struct parity_check *H,string& file_name_in);
-vector<vector<bool>> Read_File_G(string& file_name);
-
+// vector<vector<bool>> Read_File_G(string& file_name);
+vector<boost::dynamic_bitset<>> Read_File_G(string& file_name);
 
 int main(int argc,char* argv[]){
     if(argc < 2){
@@ -59,10 +62,13 @@ int main(int argc,char* argv[]){
     // define G
     cout << "H file read success!!" << endl;
     
-    vector<vector<bool>> G;
+    vector<boost::dynamic_bitset<>> Origin_G;
+    vector<boost::dynamic_bitset<>> Transpose_G;
     if(Encode_Flag){
-        G = Read_File_G(G_file_path);
+        Origin_G = Read_File_G(G_file_path);
+        Transpose_G = Transpose_Matrix(Origin_G);
         cout << "G file read success!!" << endl;
+        
     }
     
     
@@ -79,24 +85,25 @@ int main(int argc,char* argv[]){
     
 
     double SNR = SNR_min;
-    double *transmit_codeword = (double*)calloc(H.n,sizeof(double));
-    
-    double *receiver_LLR = (double*)malloc(H.n*sizeof(double));
     double code_rate = (double)(H.n-H.m)/(double)H.n;
+    boost::dynamic_bitset<> transmit_codeword(H.n);
+    boost::dynamic_bitset<> guess(H.n);
+    vector<double> receiver_LLR(H.n,0); 
+    
+    vector<double> bit_error_count(iteration_limit,0);
+    
     double ** CN_2_VN_LLR = (double**)malloc(sizeof(double*)*H.n);
     for(int i=0;i<H.n;i++) CN_2_VN_LLR[i]=(double*)calloc(H.max_col_arr[i],sizeof(double));
     double ** VN_2_CN_LLR = (double**)malloc(sizeof(double*)*H.m);
     for(int i=0;i<H.m;i++) VN_2_CN_LLR[i]=(double*)calloc(H.max_row_arr[i],sizeof(double));
-    double *guess = (double*)malloc(sizeof(double)*H.n);
-    double *bit_error_count = (double*)malloc(iteration_limit*sizeof(double));
-    vector<bool> information_bit((G.size()));
+    
+    
+    boost::dynamic_bitset<> information_bit(Origin_G.size());
     vector<int> result;
     clock_t  clk_start,clk_end;
     while(SNR <= SNR_max){
         double sigma = sqrt(1/(2*code_rate*pow(10,SNR/10.0)));
-        // cout <<"SNR : " << SNR << " | sigma : " << sigma << endl;
-        // SNR+=1;
-        // continue;
+        
         double frame_count=0;
         double frame_error=0;
         int it;
@@ -108,12 +115,13 @@ int main(int argc,char* argv[]){
         while(frame_error < frame_error_lowwer_bound){
             if(Encode_Flag){
                 for(int i=0;i<H.n-H.m;i++){
-                    information_bit[i] = random_generation()>0.5?1:0;
+                    information_bit[i] = random_generation();
                 }
-                result = Vector_Dot_Matrix_Int(information_bit,G);
+                result = GF2_Mat_Vec_Dot(information_bit,Transpose_G);
+                
             }
             for(int i=0;i<H.n;i++){
-                if(Encode_Flag) transmit_codeword[i] = result[i]%2==0?0:1; // Encode CodeWord
+                if(Encode_Flag) transmit_codeword[i] = result[i]; // Encode CodeWord
                 else transmit_codeword[i] = 0; // all zero
             }
             
@@ -128,8 +136,9 @@ int main(int argc,char* argv[]){
             it=0;
             bool error_syndrome = true;
             bool bit_error_flag=false;
+            int error_bit_count = 0;
             while(it<iteration_limit && error_syndrome){
-                
+                error_bit_count = 0;
                 /* ------- CN update ------- */
                 for(int VN=0;VN<H.n;VN++){
                     for(int i=0;i<H.max_col_arr[VN];i++){
@@ -170,13 +179,14 @@ int main(int argc,char* argv[]){
                 }
                 
                 /* ------- total LLR ------- */
+                
                 for(int VN=0;VN<H.n;VN++){
-                    guess[VN]=receiver_LLR[VN];
+                    double total_LLR = receiver_LLR[VN];
                     for(int i=0;i<H.max_col_arr[VN];i++){
-                        guess[VN]+=CN_2_VN_LLR[VN][i];
+                        total_LLR+=CN_2_VN_LLR[VN][i];
                     }
                     /* ------- make decision ------- */
-                    guess[VN]= (guess[VN]<0)?1:0;
+                    guess[VN]= (total_LLR<0)?1:0;
                 }
                 
                 /* Early Stop - Determine if it is a syndrome -> guess * H^T = vector(0) */
@@ -197,18 +207,17 @@ int main(int argc,char* argv[]){
                 /* ----- Determine bit error ----- */
                 
                 bit_error_flag=false;
-                for(int VN=0;VN<H.n;VN++){
-                    if(guess[VN]!=transmit_codeword[VN]){
-                        bit_error_count[it]++;
-                        bit_error_flag=true;
-                    }
-                }
+                auto check_result = guess ^ transmit_codeword;
+                error_bit_count = check_result.count();
+                if(error_bit_count>0) bit_error_flag = true;
+                bit_error_count[it] += static_cast<double>(error_bit_count);
+               
                 it++;
             }
             // 如果syndrome是錯的 ber 也要跟著增加
             if(!error_syndrome && bit_error_flag){
                 for(int it_idx=it;it_idx<iteration_limit;it_idx++){
-                    bit_error_count[it_idx] += H.n;
+                    bit_error_count[it_idx] += error_bit_count;
                 }
             }
             if(bit_error_flag){
@@ -232,14 +241,12 @@ int main(int argc,char* argv[]){
     /* ----------- free all memory ----------- */
     cout << "In main Free" << endl;
     FreeAllH(&H);
-    free(transmit_codeword);
-    free(receiver_LLR);
+   
     for(int i=0;i<H.n;i++) free(CN_2_VN_LLR[i]);
     free(CN_2_VN_LLR);
     for(int i=0;i<H.m;i++) free(VN_2_CN_LLR[i]);
     free(VN_2_CN_LLR);
-    free(guess);
-    free(bit_error_count);
+    
     return 0;
 }
 
@@ -332,40 +339,48 @@ void Read_File_H(struct parity_check *H,string& file_name_in){
         exit(1);
 }
 
-vector<vector<bool>> Read_File_G(string& file_name){
+vector<boost::dynamic_bitset<>> Read_File_G(string& file_name){
     ifstream file(file_name);
-    string line;
+    vector<boost::dynamic_bitset<>> G;
     vector<string> line_split;
-    int idx=0,n,k,max_col;
-    vector<vector<bool>> G;
+    string line;
+    vector<int> max_col_map;
+    int idx = 0, max_col , n ,k;
     while (getline(file, line)) {
         line = strip(line);
-        // cout << line << endl;
         line_split = split(line,' ');
         if(idx==0){
             if(line_split.size()==2){
-                n = stoi(line_split[0]);
-                k = stoi(line_split[1]);
-                G = vector<vector<bool>>(k,vector<bool>(n,0));
+                n = stoi(line_split[0]); // colsize 
+                k = stoi(line_split[1]); // rowsize
+                G = vector<boost::dynamic_bitset<>>(k, boost::dynamic_bitset<>(n));
             }else{
                 cerr << "First line(n,k) : " << line << " is not n,k !!" << endl;
                 exit(1);
             }
         }else if(idx==1){
             if(line_split.size()==1){
-                max_col = stoi(line_split[0]);
+                max_col = stoi(line_split[0]); // max_col_degree
             }else{
                 cerr << "Second line(maxcol) : " << line << " is not max_col !!" << endl;
                 exit(1);
             }
         }else if(idx==2){
-            continue;
+            if(line_split.size()==n){
+                for(int i=0;i<line_split.size();i++){
+                    max_col_map.push_back(stoi(line_split[i]));
+                }
+            }
+            else{
+                cerr << "Third line(each col 1's number) : " << line << " is not equal G matrix colsize  !! \n";
+                exit(1);
+            }
         }
         else{
-            if(line_split.size()==max_col){
+            if(line_split.size()==max_col_map[idx-3]){
                 for(string& s:line_split){
                     int pos = stoi(s);
-                    if(pos!=0) G[pos-1][idx-2]=true; // 1
+                    if(pos!=0) G[pos-1][idx-3]=true; // 1
                 }
             }else{
                 cerr << "Each Col 1 postion line : [" << line << "] postion length is not equal to " << max_col << " | length : " << line_split.size() << endl;

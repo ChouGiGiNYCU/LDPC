@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -Wfatal-errors -std=c++11
+CFLAGS = -std=c++11
 TARGET = CBP
 SRCS = CBP.cpp
 ##########################
@@ -8,16 +8,16 @@ SNR_max = 4
 SNR_Ratio = 0.25
 Iteration_Limit = 200
 ##########################
-PCM_file_1 = /mnt/c/Users/USER/Desktop/LDPC/PCM/H_96_48.txt
-PCM_outfile_1 = CBP_H96x48_it_$(Iteration_Limit).csv
+PCM_file_1 = /mnt/c/Users/USER/Desktop/LDPC/PCM/H_10_5.txt
+PCM_outfile_1 = CBP_H5x10_it_$(Iteration_Limit).csv
 ############# G setting ###########
-GM_file_1 = H_96_48.txt  # 
-GM_Encdoe_Flag_1 = 0
+GM_file_1 = /mnt/c/Users/USER/Desktop/LDPC/GM/H_10_5_G.txt
+GM_Encdoe_Flag_1 = 1
 ###################################
 
 
 $(TARGET): $(SRCS)
-	$(CC) $(CFLAGS)  $(SRCS) -o  $(TARGET) -lpthread
+	$(CC) $(CFLAGS)  $(SRCS)  -lboost_system -o  $(TARGET) 
 
    
 BP: $(TARGET)
