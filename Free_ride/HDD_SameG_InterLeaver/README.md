@@ -6,7 +6,7 @@
 `Extra` 採用 6 bits(對比H5x10)，並且共用 `Payload Generative matrix`(剩餘其他 `info_bits` 為 0)，編碼完後做`InterLeaver` 順序打亂 ，最後在疊加到 `PayLoad CodeWord`上。
 ----
 ### Algrithm
-![SDD Algorithm](https://github.com/ChouGiGiNYCU/LDPC/tree/main/Free_ride/HDD/imgHDD_Alg.png)
+![SDD Algorithm](https://github.com/ChouGiGiNYCU/LDPC/tree/main/Free_ride/HDD/img/HDD_Alg.png)
 
 
 Reference : [Free-Ride paper](https://ieeexplore.ieee.org/document/9584875)
