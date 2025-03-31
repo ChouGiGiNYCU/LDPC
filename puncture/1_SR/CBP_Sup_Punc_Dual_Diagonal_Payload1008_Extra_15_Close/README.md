@@ -1,7 +1,16 @@
 # Puncture LDPC
-在 `PEGReg504x1008` PayLoad LDPC Code 上面疊加 `H_96_48` Extra LDPC Code 做傳輸。把兩個 `PCM` 合併起來形成一個新的 `PCM` 把疊加的位置給 puncture ， 透過 BP 再把兩組 code 還原。
+在 `PEGReg504x1008` PayLoad LDPC Code 上面疊加 `BCH_15_7` Extra LDPC Code 做傳輸。把兩個 `PCM` 合併起來形成一個新的 `PCM` 把疊加的位置給 puncture ， 透過 BP 再把兩組 code 還原。
 
 當 `iteration` 小於 `iteration_limit` 且 `PayLoad_syndrome` 非全零的時候，訊息只在`PayLoad`裡面做傳遞。
+
+`Dual-Diagonal` 的結構讓疊加後的位元更有結構性。
+
+`Dual-Diagonal Matrix : `
+|     |     |     |
+|-----|-----|-----|
+| 1   | 0   | 0   |
+| 1   | 1   | 0   |
+| 0   | 1   | 1   |
 
 Puncture method 採用 1-SR 的概念(不是照paper的Alg) 去做 。
 
@@ -10,8 +19,8 @@ Puncture method 採用 1-SR 的概念(不是照paper的Alg) 去做 。
 ---
 ## 檔案
 
-- `PCM_P1008_E96_1SR.txt` : 合併的PCM檔案
-- `Pos_PCM_P1008_E96_1SR.txt` : Puncture 的 VN Node (start idx = 1)
+- `PCM_P1008_BCH15_DualDiagonal_1SR.txt` : 合併的PCM檔案
+- `Pos_PCM_P1008_BCH15_DualDiagonal_1SR.txt` : Puncture 的 VN Node (start idx = 1)
 
 ---
 ## 問題
@@ -58,6 +67,21 @@ for(int CN=0;CN<H.m;CN++){
 `Payload` 解對的時候 ， 開始把訊息傳送到`Extra` 。
 ``` c++ =
 if(it<iteration_limit && payload_error_syndrome==false) extra_error_syndrome = true;
+```
+
+`Dual-Diagonal` 的疊加部分
+``` c++ =
+// PayLoad xor Extra
+for(int i=0;i<PayLoad_H.n;i++){
+    transmit_codeword[i] = payload_Encode[i];
+}
+int prev_pos;
+for(int i=0;i<Extra_H.n;i++){
+    int xor_pos = punc_map[i];
+    if(i!=0) transmit_codeword[xor_pos] = transmit_codeword[xor_pos] ^ extra_Encode[i] ^ transmit_codeword[prev_pos];
+    else     transmit_codeword[xor_pos] = transmit_codeword[xor_pos] ^ extra_Encode[i];
+    prev_pos = xor_pos; 
+}
 ```
 ## 執行程式
 可以使用 `Ubuntu` 執行 `makefile`
