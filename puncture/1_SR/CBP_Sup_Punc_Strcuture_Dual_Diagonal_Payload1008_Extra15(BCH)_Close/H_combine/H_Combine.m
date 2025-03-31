@@ -4,8 +4,8 @@ clear all;
 close all;
 %%
 PayloadH_file = 'C:\Users\USER\Desktop\LDPC\PCM\PEGReg504x1008.txt'; % payload data
-ExtraH_file = 'C:\Users\USER\Desktop\LDPC\PCM\H_10_5.txt'; % extra data
-H_combine_file = 'PCM_P1008_H10_Strcuture_DualDiagonal_1SR.txt';
+ExtraH_file = 'C:\Users\USER\Desktop\LDPC\PCM\BCH_15_7.txt'; % extra data
+H_combine_file = 'PCM_P1008_BCH15_Strcuture_DualDiagonal_1SR.txt';
 New_structure_vn_file = ['Strcut_Pos_',H_combine_file];
 puncture_position_bits_file = ['Punc_Pos_', H_combine_file];
 PayloadH = read_parity_check(PayloadH_file);
@@ -23,7 +23,7 @@ H_combine = [[PayloadH.mat,zero1,zero2];[zero3,ExtraH.mat,zero4]];
 
 % punc_pos_bits = oneSR_method(H1,H2_c);
 % punc_pos_bits = maximize_oneSR_method(PayloadH,ExtraH.n);
-punc_pos_bits = [51 199 303 403 418 486 624 644 828 882]; % idx start = 1
+punc_pos_bits = [76 136 196 272 362 465 496 583 682 684 712 756 882 923 932 ]; % idx start = 1
 used_vns = punc_pos_bits; % idx start = 1
 New_structure_vns = [];
 for vn=punc_pos_bits
@@ -114,4 +114,10 @@ function ref = getExcelRange(col, row)
     end
     ref = [letters, num2str(row)];
 end
+%%
+H = read_parity_check('C:\Users\USER\Desktop\LDPC\PCM\H_10_5.txt');
+find_furthest_vn(H,2)
+arr = [10, 20, 30, 40, 50];
+used = [20, 30];
 
+val = random_unique_pick(arr, used)
