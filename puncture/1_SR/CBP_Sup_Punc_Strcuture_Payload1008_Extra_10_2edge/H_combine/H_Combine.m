@@ -24,28 +24,28 @@ H_combine = [[PayloadH.mat,zero1,zero2];[zero3,ExtraH.mat,zero4]];
 % punc_pos_bits = oneSR_method(H1,H2_c);
 % punc_pos_bits = maximize_oneSR_method(PayloadH,ExtraH.n);
 punc_pos_bits = [51 199 303 403 418 486 624 644 828 882]; % idx start = 1
-New_structure_vns  = [31 607 564 458 742 718 754 295 696 604];
-% find xor pos in payload
-% used_vns = punc_pos_bits; % idx start = 1
-% New_structure_vns = [];
-% for vn=punc_pos_bits
-%     idx0_vn = vn-1; % function 
-%     furthest_vns = find_furthest_vn(PayloadH,idx0_vn) + 1;
-%     choose_vn = random_unique_pick(furthest_vns,used_vns);
-%     used_vns = [used_vns,choose_vn];
-%     New_structure_vns = [New_structure_vns,choose_vn];
-%     fprintf('root : %d | ', vn);
-%     fprintf('%d ', furthest_vns);
-%     fprintf('\n');
-% end
-
+New_structure_vns_origin = [31 607 564 458 742 718 754 295 696 604];
+used_vns = [punc_pos_bits,New_structure_vns_origin]; % idx start = 1
+New_structure_vns = [];
+for vn=punc_pos_bits
+    idx0_vn = vn-1; % function 
+    furthest_vns = find_furthest_vn(PayloadH,idx0_vn) + 1;
+    choose_vn = random_unique_pick(furthest_vns,used_vns);
+    used_vns = [used_vns,choose_vn];
+    New_structure_vns = [New_structure_vns,choose_vn];
+    fprintf('root : %d | ', vn);
+    fprintf('%d ', furthest_vns);
+    fprintf('\n');
+end
+New_structure_vns = [New_structure_vns.' , New_structure_vns_origin.']
 punc_payload_mat = zeros([ExtraH.n PayloadH.n]);
 
 for r=1:ExtraH.n
     punc_vn = punc_pos_bits(r);
-    New_structure_vn = New_structure_vns(r);
     punc_payload_mat(r,punc_vn) = 1;
-    punc_payload_mat(r,New_structure_vn) = 1;
+    for New_structure_vn=New_structure_vns(r,:)
+        punc_payload_mat(r,New_structure_vn) = 1; 
+    end
 end
 I = eye(ExtraH.n);
 % dual_diagonal_I = I + [I(:,2:end),zeros(size(I,1),1)];
@@ -64,10 +64,15 @@ fclose(fileID);
 
 % write payload data with puncture bits position 
 fileID = fopen(New_structure_vn_file, 'w');
-for pos=New_structure_vns
-    fprintf(fileID, '%d ', pos);
+
+for r=1:size(New_structure_vns,1)
+    pos = New_structure_vns(r,:);
+    for p=pos
+        fprintf(fileID, '%d ', p);
+    end
+    fprintf(fileID, '\n');
 end
-fprintf(fileID, '\n');
+
 fclose(fileID);
 %%
 % 範例二維矩陣（只有0與1）

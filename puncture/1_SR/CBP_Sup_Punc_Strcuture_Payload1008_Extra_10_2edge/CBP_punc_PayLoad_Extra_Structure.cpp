@@ -30,13 +30,14 @@ void FreeAllH(struct parity_check*H);
 void Read_File_H(struct parity_check *H,string& file_name_in);
 vector<boost::dynamic_bitset<>> Read_File_G(string& file_name);
 vector<int> Read_punc_pos(string file,int  extra_nums);
-vector<int> Read_Structure_pos(string file,int  extra_nums);
+vector<vector<int>> Read_Structure_pos(string file,int  extra_nums,int col_size);
 
 int main(int argc,char* argv[]){
     double frame_error_lowwer_bound = 400;
     if(argc < 2){
         cout << "** Error ---- No file in \n" ; 
     }
+    int col_size = 2; // LT Code 疊加在Sup的bits有多少
     string H_combine_file = argv[1];
     string PayLoad_out_file = argv[2];
     string Extra_out_file = argv[3];
@@ -93,8 +94,8 @@ int main(int argc,char* argv[]){
     punc_map = Read_punc_pos(puncture_pos_file,Extra_H.n);
     cout << "Puncture position file read success !!" << endl;
     // Read Structure pos 
-    vector<int> Structure_map;
-    Structure_map = Read_punc_pos(Structure_pos_file,Extra_H.n);
+    vector<vector<int>> Structure_map;
+    Structure_map = Read_Structure_pos(Structure_pos_file,Extra_H.n,col_size);
     cout << "Structure position file read success !!" << endl;
     cout << "##############################" << "\n";
     // define PayLoad_G
@@ -219,8 +220,12 @@ int main(int argc,char* argv[]){
             // PayLoad xor Extra xor Struture
             for(int i=0;i<Extra_H.n;i++){
                 int punc_xor_pos  = punc_map[i];
-                int structure_pos = Structure_map[i];
-                transmit_codeword[punc_xor_pos] = transmit_codeword[punc_xor_pos] ^ extra_Encode[i] ^ transmit_codeword[structure_pos]; 
+                // transmit_codeword[punc_xor_pos] = transmit_codeword[punc_xor_pos] ^ extra_Encode[i] ^ transmit_codeword[structure_pos];
+                transmit_codeword[punc_xor_pos] = transmit_codeword[punc_xor_pos] ^ extra_Encode[i]; // payload xor extra
+                for(int pos=0;pos<Structure_map[i].size();pos++){
+                    int structure_pos = Structure_map[i][pos];
+                    transmit_codeword[punc_xor_pos] = transmit_codeword[punc_xor_pos] ^ transmit_codeword[structure_pos];
+                }
             }
 
             // Count LLR
@@ -545,27 +550,30 @@ void Read_File_H(struct parity_check *H,string& file_name_in){
         file_in.close();
         exit(1);
 }
-vector<int> Read_punc_pos(string file,int extra_nums){
+vector<int> Read_punc_pos(string file,int  extra_nums){
     ifstream punc_file(file);
     vector<int> punc_map;
     // cout <<  "punc pos : " ;
     for(int i=0;i<extra_nums;i++){
         int pos;
         punc_file >> pos;
-        // cout << " " << pos << endl;
         punc_map.push_back(pos-1);
     }
     punc_file.close();
     return punc_map;
 }
 
-vector<int> Read_Structure_pos(string file,int  extra_nums){
+vector<vector<int>> Read_Structure_pos(string file,int  extra_nums,int col_size){
     ifstream Structure_file(file);
-    vector<int> Structure_map;
+    vector<vector<int>> Structure_map;
     for(int i=0;i<extra_nums;i++){
-        int pos;
-        Structure_file >> pos;
-        Structure_map.push_back(pos-1);
+        vector<int> Structure_pos_tmp;
+        for(int idx=0;idx<col_size;idx++){
+            int pos;
+            Structure_file >> pos;
+            Structure_pos_tmp.push_back(pos-1);
+        }
+        Structure_map.push_back(Structure_pos_tmp);
     }
     Structure_file.close();
     return Structure_map;
