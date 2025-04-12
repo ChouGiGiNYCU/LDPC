@@ -4,11 +4,11 @@ clear all;
 close all;
 %%
 H1_file = 'C:\Users\USER\Desktop\LDPC\PCM\PEGReg504x1008.txt'; % payload data
-H2_file = 'C:\Users\USER\Desktop\LDPC\PCM\H_96_48.txt'; % extra data
-Each_VNs_Girth_num_file = "Each_VN_Girth_Record_H96x48.csv";
-H_combine_file = 'PCM_P1008_E96_PartialExtraTransmit_1SR_50.txt';
-puncture_position_bits_file = "Table_Superposition_Extra_Payload_50.csv";
-Transmit_Extra_VNs_table_file     = "Table_ExtraTransmitVNs_to_PuncPosPayload_50.csv";
+H2_file = 'C:\Users\USER\Desktop\LDPC\PCM\BCH_15_7.txt'; % extra data
+Each_VNs_Girth_num_file = "Each_VN_Girth_Record_BCH15x7.csv";
+H_combine_file = 'PCM_P1008_E15BCH_PartialExtraTransmit_1SR.txt';
+puncture_position_bits_file = "Table_Superposition_Extra_Payload.csv";
+Transmit_Extra_VNs_table_file     = "Table_ExtraTransmitVNs_to_PuncPosPayload.csv";
 
 H1 = readHFromFileByLine(H1_file);
 H2 = readHFromFileByLine(H2_file);
@@ -41,7 +41,7 @@ H_combine = [[H1,zero1,zero2];[zero3,H2,zero4]];
 
 % punc_pos_bits = oneSR_method(H1,H2_c);
 % punc_pos_bits = maximize_oneSR_method(H1,H2_c); % idx = 1
-punc_pos_bits_origin = [9 10 28 30 33 34 43 46 56 59 88 93 111 129 134 139 147 158 167 169 181 186 233 238 239 244 262 264 271 277 283 286 290 317 340 351 373 390 391 395 396 399 401 416 451 453 484 489 505 514 537 548 551 563 573 582 603 623 636 639 642 658 666 701 709 720 742 748 757 762 769 775 791 798 810 811 813 817 822 825 837 842 857 862 914 916 921 924 935 939 946 962 969 971 973 1003]; 
+punc_pos_bits_origin = [76 136 196 272 362 465 496 583 682 684 712 756 882 923 932]; 
 
 remove_idx = randperm(length(punc_pos_bits_origin), Extra_Transmit_number); % 隨機選擇 num 個 index 要刪掉
 Extra_Transmit_OnPayload_vn = punc_pos_bits_origin(remove_idx);
