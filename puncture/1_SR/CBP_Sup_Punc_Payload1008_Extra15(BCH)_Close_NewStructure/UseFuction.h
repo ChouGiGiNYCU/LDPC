@@ -1,12 +1,12 @@
 #ifndef UseFuction_H  
 #define UseFuction_H  
 #include<fstream>
-#include <sstream>
 #include<random>
 #include<vector>
 #include<chrono>
 #include<iostream>
 #include <stdexcept>
+#include <sstream>
 #include <boost/dynamic_bitset.hpp>
 
 template <typename T>
@@ -96,7 +96,6 @@ bool random_generation(){
     return currentRandomNumber>0.5?true:false;
 }
 
-
 std::vector<std::pair<int,int>> Read_Extra2Pyalod_CSVfile(std::string& file_name){
     std::ifstream file(file_name);
     std::string line;
@@ -123,6 +122,5 @@ std::vector<std::pair<int,int>> Read_Extra2Pyalod_CSVfile(std::string& file_name
 
     return Map_Extra2Payload;
 }
-
 
 #endif

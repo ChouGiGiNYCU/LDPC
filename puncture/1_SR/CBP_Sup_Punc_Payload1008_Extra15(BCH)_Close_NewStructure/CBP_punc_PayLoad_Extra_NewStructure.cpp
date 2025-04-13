@@ -29,7 +29,8 @@ struct parity_check{
 void FreeAllH(struct parity_check*H);
 void Read_File_H(struct parity_check *H,string& file_name_in);
 vector<boost::dynamic_bitset<>> Read_File_G(string& file_name);
-vector<int> Read_punc_pos(string file,vector<bool>& punc_pos,int  extra_nums);
+vector<int> Read_punc_pos(string file,int  extra_nums);
+vector<int> Read_Structure_pos(string file,int  extra_nums);
 
 int main(int argc,char* argv[]){
     double frame_error_lowwer_bound = 400;
@@ -51,7 +52,9 @@ int main(int argc,char* argv[]){
     double SNR_max = atof(argv[11]);
     double SNR_ratio = atof(argv[12]);
     int iteration_open = atoi(argv[13]); // Open_Iteration
-    string Table_Extra_Payload_file = argv[14];
+    bool iteration_open_flag = iteration_open>0?true:false;
+    string Sup_out_file = argv[14]; 
+    string Structure_pos_file = argv[15];
     cout << "##############################" << "\n";
     cout << "H_combine_file : " << H_combine_file << "\n";
     cout << "PayLoad_out_file : " << PayLoad_out_file << "\n";
@@ -68,31 +71,40 @@ int main(int argc,char* argv[]){
     cout << "SNR_max : " << SNR_max << "\n";
     cout << "SNR_ratio : " << SNR_ratio << "\n";
     cout << "iteration_open : " << iteration_open << "\n";
-    cout << "Table_Extra_Payload_file : " << Table_Extra_Payload_file << "\n";
+    cout << "iteration_open_flag : " << iteration_open_flag << "\n"; 
+    cout << "Sup_out_file : " << Sup_out_file << "\n";
+    cout << "Structure_pos_file : " << Structure_pos_file << "\n";
     cout << "##############################" << "\n";
     // define H_combine
     struct parity_check H;
     Read_File_H(&H,H_combine_file);
-    cout << "H_combine file read success!!\n";
+    cout << "H_combine file read success!!" << endl;
     // define PayLoad_H
     struct parity_check PayLoad_H;
     Read_File_H(&PayLoad_H,Payload_PCM_file);
-    cout << "PayLoad_H file read success!!\n";
+    cout << "PayLoad_H file read success!!" << endl;
     // define Extra_H
     struct parity_check Extra_H;
     Read_File_H(&Extra_H,Extra_PCM_file);
-    cout << "Extra_H file read success!!\n";
+    cout << "Extra_H file read success!!" << endl;
+    cout << "##############################" << "\n";
     // Read Puncture pos
-    vector<pair<int,int>> Superposition_Extra2Payload_table = Read_Extra2Pyalod_CSVfile(puncture_pos_file);
-    int Superposition_bits = Superposition_Extra2Payload_table.size();
-    cout << "Puncture position file read success | Bits : " << Superposition_bits << "\n";
+    vector<int> punc_map;
+    punc_map = Read_punc_pos(puncture_pos_file,Extra_H.n);
+    cout << "Puncture position file read success !!" << endl;
+    // Read Structure pos 
+    vector<pair<int,int>> New_Structure_map;
+    New_Structure_map = Read_Extra2Pyalod_CSVfile(Structure_pos_file);
+    cout << "New_Structure_map position file read success !!" << endl;
+    cout << "##############################" << "\n";
     // define PayLoad_G
     vector<boost::dynamic_bitset<>> Payload_Origin_G;
     vector<boost::dynamic_bitset<>> Payload_Transpose_G;
     if(PayLoad_Flag){
         Payload_Origin_G = Read_File_G(PayLoad_G_file);
         Payload_Transpose_G = Transpose_Matrix(Payload_Origin_G); 
-        cout << "PayLoad_G file read success!!\n";
+        cout << "PayLoad_G file read success!!" << endl;
+        cout << "##############################" << "\n";
     }
     // define Extra_G
     vector<boost::dynamic_bitset<>> Extra_Origin_G;
@@ -100,11 +112,9 @@ int main(int argc,char* argv[]){
     if(Extra_Flag){
         Extra_Origin_G = Read_File_G(Extra_G_file);
         Extra_Transpose_G = Transpose_Matrix(Extra_Origin_G); 
-        cout << "Extra_G file read success!!\n";
+        cout << "Extra_G file read success!!" << endl;
+        cout << "##############################" << "\n";
     }
-    // read Extra Transmit to Payload table
-    vector<pair<int,int>> Extra_Payload_table = Read_Extra2Pyalod_CSVfile(Table_Extra_Payload_file);
-    cout << "Read Extra_Payload_table success \n";
     // create payload out csv
     ofstream PayLoad_outfile(PayLoad_out_file);
     if (!PayLoad_outfile.is_open()) {
@@ -128,6 +138,18 @@ int main(int argc,char* argv[]){
         Extra_outfile << "BER_it_"+to_string(i) << ", ";
     }
     Extra_outfile << endl;
+
+    // create Sup out csv
+    ofstream Superposition_outfile(Sup_out_file);
+    if (!Superposition_outfile.is_open()) {
+        cout << "Output file: " << Sup_out_file  << " cannot be opened." << endl;
+		exit(1);
+    }
+    Superposition_outfile << "Eb_over_N0" << ", " << "frame_error_rate" << ", ";
+    for(int i=0;i<iteration_limit;i++){
+        Superposition_outfile << "BER_it_"+to_string(i) << ", ";
+    }
+    Superposition_outfile << endl;
     
     double SNR = SNR_min;
     // ((Payload info) + length(Extra Codeword))/ length(Payload CodeWord) 
@@ -148,6 +170,7 @@ int main(int argc,char* argv[]){
     vector<double> receiver_LLR(H.n,0); 
     vector<double> payload_bit_error_count(iteration_limit,0);
     vector<double> extra_bit_error_count(iteration_limit,0);
+    vector<double> superposition_bit_error_count(iteration_limit,0);
     vector<double> totalLLR(H.n,0);
 
     boost::dynamic_bitset<> transmit_codeword(H.n);
@@ -157,18 +180,18 @@ int main(int argc,char* argv[]){
     boost::dynamic_bitset<> extra_Encode(Extra_H.n);
     boost::dynamic_bitset<> payload_guess(PayLoad_H.n);
     boost::dynamic_bitset<> extra_guess(Extra_H.n);
-
+    
     clock_t  clk_start,clk_end;
     while(SNR <= SNR_max){
         double sigma = sqrt(1/(2*code_rate*pow(10,SNR/10.0)));
         double frame_count=0;
-        double payload_frame_error=0,extra_frame_error=0;
+        double payload_frame_error=0,extra_frame_error=0,superposition_frame_error=0;
         int it;
         fill(payload_bit_error_count.begin(),payload_bit_error_count.end(),0.0);
         fill(extra_bit_error_count.begin(),extra_bit_error_count.end(),0.0);
+        fill(superposition_bit_error_count.begin(),superposition_bit_error_count.end(),0.0);
         clk_start = clock();
         while(payload_frame_error < frame_error_lowwer_bound){
-            // printf("Frame : %f | Error_Frame : %f \n",frame_count,payload_frame_error);
             // 處理 Payload CodeWord 是zero 還是Encode
             if(PayLoad_Flag){
                 for(int i=0;i<Payload_Origin_G.size();i++){
@@ -187,24 +210,25 @@ int main(int argc,char* argv[]){
             }else{
                 extra_Encode.reset();
             }
-            
-            /*--------處理transmit codeword--------*/
-            // PayLoad xor Extra
+            /*------------ CodeWord process ------------*/
+            // PayLoad 
             for(int i=0;i<PayLoad_H.n;i++){
                 transmit_codeword[i] = payload_Encode[i];
             }
-            for(auto& table:Superposition_Extra2Payload_table){
-                int extra_vn = table.first;
-                int payload_vn = table.second;
-                transmit_codeword[payload_vn] = transmit_codeword[payload_vn] ^ extra_Encode[extra_vn]; 
+            // PayLoad xor Extra with orgin method
+            for(int i=0;i<Extra_H.n;i++){
+                int punc_xor_pos  = punc_map[i];
+                transmit_codeword[punc_xor_pos] = transmit_codeword[punc_xor_pos] ^ extra_Encode[i]; 
             }
-            // 部分 Payload bits 不傳，改傳送部分 Extra bits
-            for(auto& table:Extra_Payload_table){
-                int extra_vn = table.first;
-                int payload_vn = table.second;
-                transmit_codeword[payload_vn] = extra_Encode[extra_vn];
+            // Payload xor Extra with NewStructure (Extra ^ P1 ^ P2)
+            int Extra_vn = 0;
+            for(auto& pos:New_Structure_map){
+                int payload_pos1  = pos.first;
+                int payload_pos2  = pos.second;
+                transmit_codeword[payload_pos2] = transmit_codeword[payload_pos2] ^ payload_Encode[payload_pos1] ^ extra_Encode[Extra_vn];
+                Extra_vn++;
             }
-            /*----------------------------*/
+            /*------------------------------------------*/
             // Count LLR
             fill(receiver_LLR.begin(),receiver_LLR.end(),0.0);
             for(int i=0;i<PayLoad_H.n;i++){
@@ -214,46 +238,48 @@ int main(int argc,char* argv[]){
                 double receive_value=static_cast<double>(-2*transmit_codeword[i]+1) + sigma*gasdev(); // fixed power
                 receiver_LLR[i]=2*receive_value/pow(sigma,2); 
             }
-            /*---------設定把某些bits設定為punc node---------*/
-            // total H colsize = Payload_H.n + Extra_H.n + Superposition_table.size() 
-            // setting puncture bits(Extra be puncture)
-            for(int vn=PayLoad_H.n;vn<(PayLoad_H.n+Extra_H.n);vn++) receiver_LLR[vn] = 0;
-            // 部分Extra 傳送過來的資訊要放上去
-            for(auto& table:Extra_Payload_table){
-                int extra_vn = table.first;
-                int payload_vn = table.second;
-                receiver_LLR[PayLoad_H.n+extra_vn] = receiver_LLR[payload_vn]; 
-                receiver_LLR[payload_vn] = 0; // 原本的payload被puncture掉
-            }
-            // 把疊加的部分放到最後幾個colsize
-            int pos_offset = 0;
-            for(auto& table:Superposition_Extra2Payload_table){
-                int pos = PayLoad_H.n + Extra_H.n + pos_offset; 
-                int extra_vn = table.first;
-                int payload_vn = table.second;
-                receiver_LLR[pos] = receiver_LLR[payload_vn]; 
-                receiver_LLR[payload_vn] = 0; // 原本的payload被puncture掉
-                pos_offset++;
-            } 
-            /*----------------------------*/
 
+            /*------------ LLR position swap ------------*/
+            // vn consist : [Payload_VNs , Extra_VNs , Superposition_VNs , Extra^Payload1_VNs , Extra^Payload1^Payload2_VNs ]
+            // setting puncture bits - Extra_VNs
+            for(int i=PayLoad_H.n;i<(PayLoad_H.n+Extra_H.n);i++) receiver_LLR[i] = 0;
+            // setting puncture bits - Superposition_VNs
+            for(int i=(PayLoad_H.n+Extra_H.n);i<(PayLoad_H.n+Extra_H.n*2);i++){
+                int idx = i-(Extra_H.n+PayLoad_H.n);
+                int origin_vn_pos = punc_map[idx];
+                receiver_LLR[i] = receiver_LLR[origin_vn_pos];
+                receiver_LLR[origin_vn_pos] = 0; // be punctured
+            }
+            // setting puncture bits - Extra^Payload1_VNs
+            for(int i=(PayLoad_H.n+Extra_H.n*2);i<(PayLoad_H.n+Extra_H.n*3);i++) receiver_LLR[i] = 0; // be punctured
+            // setting puncture bits - Extra^Payload1^Payload2_VNs
+            auto pair_iter  = New_Structure_map.begin();
+            for(int i=(PayLoad_H.n+Extra_H.n*3);i<(PayLoad_H.n+Extra_H.n*4) && pair_iter  != New_Structure_map.end();i++,pair_iter++){
+                int Payload_punc_pos = pair_iter ->second;
+                receiver_LLR[i] = receiver_LLR[Payload_punc_pos];
+                receiver_LLR[Payload_punc_pos] = 0;
+            }
+            /*------------------------------------------*/
+            
             it=0;
             bool payload_error_syndrome = true;
             bool extra_error_syndrome = true;
             bool payload_bit_error_flag=false;
             bool extra_bit_error_flag=false;
             bool payload_correct_flag = false; // 如果 payload syndrome 是全零，代表 codeword 是個合法的，就開通往extra 傳送 message
-            int payload_error_bit = 0 , extra_error_bit=0;
+            bool superposition_bit_error_flag = false;
+            int payload_error_bit = 0 , extra_error_bit=0 , superposition_error_bit=0;
             fill(totalLLR.begin(),totalLLR.end(),0.0);
             for(auto& row : CN_2_VN_LLR)  fill(row.begin(), row.end(), 0.0);
             for(auto& row : VN_2_CN_LLR)  fill(row.begin(), row.end(), 0.0);
             while(it<iteration_limit && (payload_error_syndrome || extra_error_syndrome)){
                 payload_error_bit = 0;
                 extra_error_bit = 0;
+                superposition_error_bit = 0;
                 /* ------- CN update ------- */
                 for(int VN=0;VN<H.n;VN++){
                     // 不把訊息傳到Extra 那邊
-                    if(VN>=PayLoad_H.n && VN<(Extra_H.n+PayLoad_H.n) && (it<iteration_open && payload_correct_flag==false)) continue;
+                    if(iteration_open_flag && VN>=PayLoad_H.n && VN<(Extra_H.n+PayLoad_H.n) && (it<iteration_open && payload_correct_flag==false)) continue;
                     for(int i=0;i<H.max_col_arr[VN];i++){
                         int CN = H.CN_2_VN_pos[VN][i];
                         double alpha=1,phi_beta_sum=0;
@@ -264,14 +290,14 @@ int main(int argc,char* argv[]){
                             if(it==0){ //第一次迭帶就是 直接加上剛算好的receiver_LLR
                                 double LLR = receiver_LLR[other_VN];
                                 phi_beta_sum += phi(abs(LLR));
-                                if(LLR==0) alpha *= random_generation()>0.5?1:-1; // random 
+                                if(LLR==0) alpha *= random_generation()?1:-1; // random 
                                 else alpha *= (LLR>0)?1:-1;
                                 
                                 // total_LLR *= tanh(0.5*(receiver_LLR[other_VN])); 
                             }else{
                                 double LLR = VN_2_CN_LLR[CN][j];
                                 phi_beta_sum += phi(abs(LLR));
-                                if(LLR==0) alpha *= random_generation()>0.5?1:-1; // random 
+                                if(LLR==0) alpha *= random_generation()?1:-1; // random 
                                 else alpha *=(LLR>0)?1:-1;
                                 
                                 // total_LLR *=tanh(0.5*VN_2_CN_LLR[CN][j]) ;
@@ -288,7 +314,7 @@ int main(int argc,char* argv[]){
                 for(int CN=0;CN<H.m;CN++){
                     for(int i=0;i<H.max_row_arr[CN];i++){
                         int VN=H.VN_2_CN_pos[CN][i];
-                        if(VN>=PayLoad_H.n && VN<(Extra_H.n+PayLoad_H.n) && (it<iteration_open && payload_correct_flag==false)) continue;
+                        if(iteration_open_flag && VN>=PayLoad_H.n && VN<(Extra_H.n+PayLoad_H.n) && (it<iteration_open && payload_correct_flag==false)) continue;
                         double total_LLR = receiver_LLR[VN];
                         for(int j=0;j<H.max_col_arr[VN];j++){
                             int other_CN = H.CN_2_VN_pos[VN][j];
@@ -344,8 +370,8 @@ int main(int argc,char* argv[]){
                     }
                     extra_error_syndrome = false;
                 }
-                if(payload_correct_flag==false && it<iteration_open) extra_error_syndrome = true;
-                if(payload_error_syndrome==false) payload_correct_flag = true;
+                if(iteration_open_flag && payload_correct_flag==false && it<iteration_open) extra_error_syndrome = true;
+                if(iteration_open_flag && payload_error_syndrome==false) payload_correct_flag = true;
                 /* ----- Determine PayLoad BER ----- */
                 payload_bit_error_flag=false;
                 auto payload_check_result =  payload_guess ^ payload_Encode;
@@ -359,8 +385,24 @@ int main(int argc,char* argv[]){
                 extra_error_bit = extra_check_result.count();
                 if(extra_error_bit>0) extra_bit_error_flag = true;
                 extra_bit_error_count[it] += static_cast<double>(extra_error_bit);
-               
-                
+
+                /* ----- Determine Superposition BER ----- */
+                superposition_bit_error_flag=false;
+                for(int idx=0;idx<Extra_H.n;idx++){
+                    int sup_pos = punc_map[idx];
+                    int LLR_pos = PayLoad_H.n+Extra_H.n+idx;
+                    bool superposition_guess = totalLLR[LLR_pos]>0?0:1;
+                    if(superposition_guess^transmit_codeword[sup_pos]==1) superposition_error_bit++; 
+                }
+                auto pair_iter = New_Structure_map.begin(); // a^b^c
+                for(int idx=0;idx<Extra_H.n && pair_iter!=New_Structure_map.end();idx++){
+                    int sup_pos = pair_iter->second;
+                    int LLR_pos = PayLoad_H.n+Extra_H.n*3+idx;
+                    bool superposition_guess = totalLLR[LLR_pos]>0?0:1;
+                    if(superposition_guess^transmit_codeword[sup_pos]==1) superposition_error_bit++; 
+                }
+                if(superposition_error_bit>0) superposition_bit_error_flag = true;
+                superposition_bit_error_count[it] += superposition_error_bit;
                 it++;
             }
             // 如果 syndorme check is ok ，但是codeword bit 有錯，代表解錯codeword ， BER[it+1:iteration_limit] += codeword length
@@ -375,6 +417,12 @@ int main(int argc,char* argv[]){
                     extra_bit_error_count[it_idx] += extra_error_bit;
                 }
             }
+            if(superposition_bit_error_flag){
+                for(int it_idx=it;it_idx<iteration_limit;it_idx++){
+                    superposition_bit_error_count[it_idx] += superposition_error_bit;
+                }
+                superposition_frame_error += 1;
+            }
             // Frame count
             if(payload_bit_error_flag){
                 payload_frame_error+=1;
@@ -388,6 +436,7 @@ int main(int argc,char* argv[]){
         double clk_duration = (double)(clk_end-clk_start)/CLOCKS_PER_SEC;
         printf("PayLoad - SNR : %.2f  | FER : %.5e  | BER : %.5e(%d) | Time : %.3f | Total frame : %.0f\n",SNR,payload_frame_error/frame_count,payload_bit_error_count[iteration_limit-1]/((double)PayLoad_H.n*frame_count),it,clk_duration,frame_count);
         printf("Extra   - SNR : %.2f  | FER : %.5e  | BER : %.5e(%d) | Time : %.3f | Error frame : %.0f | BER_num : %.0f\n",SNR,extra_frame_error/frame_count,extra_bit_error_count[iteration_limit-1]/((double)Extra_H.n*frame_count),it,clk_duration,extra_frame_error,extra_bit_error_count[iteration_limit-1]);
+        printf("Sup     - SNR : %.2f  | FER : %.5e  | BER : %.5e(%d) | Time : %.3f | Error frame : %.0f | BER_num : %.0f\n",SNR,superposition_frame_error/frame_count,superposition_bit_error_count[iteration_limit-1]/((double)Extra_H.n*frame_count),it,clk_duration,superposition_frame_error,superposition_bit_error_count[iteration_limit-1]);
         
         // Write PayLoad Performance to csv
         PayLoad_outfile << SNR << ", " << payload_frame_error/frame_count << ", ";
@@ -402,17 +451,18 @@ int main(int argc,char* argv[]){
             Extra_outfile << extra_bit_error_count[i]/((double)Extra_H.n*frame_count) << ", ";
         }
         Extra_outfile <<endl;
+
+        // Write Superposition Performance to csv
+        Superposition_outfile << SNR << ", " << superposition_frame_error/frame_count << ", ";
+        for(int i=0;i<iteration_limit;i++){
+            Superposition_outfile << superposition_bit_error_count[i]/((double)Extra_H.n*frame_count) << ", ";
+        }
+        Superposition_outfile <<endl;
         
         // Change SNR 
-        if(SNR==SNR_max){
-            cout << "over the SNR_max \n";
-            break;
-        }
-        else if(SNR+SNR_ratio>SNR_max){
-            SNR=SNR_max;
-        }else{
-            SNR=SNR+SNR_ratio;
-        }
+        if(SNR==SNR_max) break;
+        SNR = min(SNR+SNR_ratio,SNR_max);
+        
         // chage error frame bound 
         // if(payload_bit_error_count[iteration_limit-1]/((double)PayLoad_H.n*frame_count) < 1e-4){
         //     frame_error_lowwer_bound /=2;
@@ -422,7 +472,7 @@ int main(int argc,char* argv[]){
     }
     PayLoad_outfile.close();
     Extra_outfile.close();
-
+    Superposition_outfile.close();
     /* ----------- free all memory ----------- */
     cout << "In main Free \n";
     FreeAllH(&H);
@@ -517,25 +567,31 @@ void Read_File_H(struct parity_check *H,string& file_name_in){
         file_in.close();
         exit(1);
 }
-vector<int> Read_punc_pos(string file,vector<bool>& punc_pos,int extra_nums){
+vector<int> Read_punc_pos(string file,int extra_nums){
     ifstream punc_file(file);
     vector<int> punc_map;
-   
     // cout <<  "punc pos : " ;
     for(int i=0;i<extra_nums;i++){
         int pos;
         punc_file >> pos;
         // cout << " " << pos << endl;
-        
-        punc_pos[pos-1]=true;
         punc_map.push_back(pos-1);
-        
     }
     punc_file.close();
     return punc_map;
 }
 
-
+vector<int> Read_Structure_pos(string file,int  extra_nums){
+    ifstream Structure_file(file);
+    vector<int> Structure_map;
+    for(int i=0;i<extra_nums;i++){
+        int pos;
+        Structure_file >> pos;
+        Structure_map.push_back(pos-1);
+    }
+    Structure_file.close();
+    return Structure_map;
+}
 vector<boost::dynamic_bitset<>> Read_File_G(string& file_name){
     ifstream file(file_name);
     vector<boost::dynamic_bitset<>> G;
