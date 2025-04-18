@@ -5,9 +5,9 @@ close all;
 %%
 H1_file = 'C:\Users\USER\Desktop\LDPC\PCM\PEGReg504x1008.txt'; % payload data
 H2_file = 'C:\Users\USER\Desktop\LDPC\PCM\BCH_15_7.txt'; % extra data
-H_combine_file = 'PCM_P1008_E15BCH_Structure.txt';
-puncture_position_bits_file = "Punc_Superpostion_origin_Payload.txt";
-New_puncture_position_bits_file = "Punc_Superpostion_new_Payload.csv";
+H_combine_file = 'PCM_P1008_E15BCH_Structure_Worst.txt';
+puncture_position_bits_file = "Punc_Superpostion_origin_Payload_Worst.txt";
+New_puncture_position_bits_file = "Punc_Superpostion_new_Payload_Worst.csv";
 
 H1 = readHFromFileByLine(H1_file);
 H2 = readHFromFileByLine(H2_file);
@@ -26,15 +26,24 @@ zero4 = zeros([H2_r H2_c]);
 zero5 = zeros([H1_r H2_c]);
 zero6 = zeros([H2_r H2_c]);
 zero7 = zeros([H2_c H2_c]);
-
+%%
 % punc_pos_bits = oneSR_method(H1,H2_c);
 punc_pos_bits = maximize_oneSR_method(H1,H2_c*3); % idx = 1
-% punc_pos_bits_origin = [76 136 196 272 362 465 496 583 682 684 712 756 882 923 932]; 
+% punc_pos_bits_origin = [76 136 196 272 362 465 496 583 682 684 712 756 882 923 932];
 % 把找到的punc bits 分成 Payload+Extra 、 New_Struct(e^b) 、 New_Struct(e^b^c)
 punc_pos_bits_origin      =  punc_pos_bits(1:H2_c);
 punc_pos_bits_New_Struct1 =  punc_pos_bits(H2_c+1:H2_c*2);
 punc_pos_bits_New_Struct2 =  punc_pos_bits(H2_c*2+1:end);
-
+%% worst case 
+punc_pos_bits = Find_KSR_WorstVN(H1,H2_c*2); % punc 使用 k-SR
+% 把找到的punc bits 分成 Payload+Extra 、 New_Struct(e^b)
+punc_pos_bits_origin      =  punc_pos_bits(1:H2_c);
+punc_pos_bits_New_Struct1 =  punc_pos_bits(H2_c+1:H2_c*2);
+% extra 而外的結構(第一個跟payload 做 xor的) 用隨機挑選
+punc_pos_bits_New_Struct2 = setdiff(1:H2_c,punc_pos_bits);
+idx = randperm(numel(punc_pos_bits_New_Struct2), H2_c); % 隨機不重複地抽 n 個索引
+punc_pos_bits_New_Struct2 = punc_pos_bits_New_Struct2(idx);
+%%
 punc_payload_mat = zeros([H2_c,H1_c]);
 for r=1:H2_c
     punc_vn = punc_pos_bits_origin(r);
