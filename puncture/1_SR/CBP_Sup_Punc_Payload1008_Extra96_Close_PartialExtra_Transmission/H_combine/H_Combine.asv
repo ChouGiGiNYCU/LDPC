@@ -6,16 +6,19 @@ close all;
 H1_file = 'C:\Users\USER\Desktop\LDPC\PCM\PEGReg504x1008.txt'; % payload data
 H2_file = 'C:\Users\USER\Desktop\LDPC\PCM\H_96_48.txt'; % extra data
 Each_VNs_Girth_num_file = "Each_VN_Girth_Record_H96x48.csv";
-H_combine_file = 'PCM_P1008_E96_PartialExtraTransmit_1SR.txt';
-puncture_position_bits_file = ['Pos_', H_combine_file];
-Transmit_Extra_VNs_file     = "Pos_Extra_Transmit_VNs.txt";
+H_combine_file = 'PCM_P1008_E96_PartialExtraTransmit_1SR_50_Randomchoose.txt';
+puncture_position_bits_file = "Table_Superposition_Extra_Payload_50_Randomchoose.csv"; % 對應payload 、 extra puncture位置(原本的方法)
+Transmit_Extra_VNs_table_file     = "Table_ExtraTransmitVNs_to_PuncPosPayload_50_Randomchoose.csv"; % 傳送的extra bits 位置 、不傳送的payload bits
+
 H1 = readHFromFileByLine(H1_file);
 H2 = readHFromFileByLine(H2_file);
 [H1_r,H1_c] = size(H1);
 [H2_r,H2_c] = size(H2);
-Extra_Transmit_Ratio = 0.2;
-Extra_Transmit_number = floor(0.2 *  H2_c);
+Extra_Transmit_Ratio = 0.5;
+Extra_Transmit_number = floor(Extra_Transmit_Ratio *  H2_c);
 Punc_p_r = H2_c-Extra_Transmit_number;
+%% 讀取每個VN經過girth的數量
+% 把Extra VN 分成 Transmit and Superposition 
 % read Each_VNs_Girth_num_file 
 Each_VNs_Girth_num = readtable(Each_VNs_Girth_num_file);
 vn = Each_VNs_Girth_num.VN; 
@@ -26,7 +29,12 @@ vn_sorted = vn(idx); % 排序後的 vn 與 girth_node
 girth_sorted = girth_num(idx);
 % 要傳送的部分 Extra VNs
 Transmit_Extra_VNs = vn_sorted(1:Extra_Transmit_number).' + 1; % idx =1
+Transmit_Extra_VNs = randperm(H2_c,Extra_Transmit_number);
+remaining_Extra_VN = setdiff(1:H2_c, Transmit_Extra_VNs);  % 找出剩下的部分
+%% By transmit non 1
+punc_pos_bits = maximize_oneSR_method(H2,40); % idx = 1
 
+%%
 
 % H_combine = [  H1     zero1       zero2 
 %               zero3     H2        zero4
@@ -53,7 +61,7 @@ for r=1:Punc_p_r
     punc_payload_mat(r,punc_vn) = 1;
 end
 punc_extra_mat = zeros([Punc_p_r H2_c]);
-remaining_Extra_VN = setdiff(1:H2_c, Transmit_Extra_VNs);  % 找出剩下的部分
+
 for r=1:Punc_p_r
     remain_vn = remaining_Extra_VN(r);
     punc_extra_mat(r,remain_vn) = 1;
@@ -65,28 +73,18 @@ H_combine = [H_combine;punc_payload_mat,punc_extra_mat,I];
 writePCM(H_combine,H_combine_file);
 
 % write payload data with puncture bits position 
-fileID = fopen(puncture_position_bits_file, 'w');
-for pos=punc_pos_bits_origin
-    fprintf(fileID, '%d ', pos);
-end
-fprintf(fileID, '\n');
-fclose(fileID);
+T = table(remaining_Extra_VN.',punc_pos_bits_origin.','VariableNames', {'Extra_VNs', 'Payload_VNs'});  % 建立 table
+writetable(T, puncture_position_bits_file);  % 輸出 csv
+% fileID = fopen(puncture_position_bits_file, 'w');
+% for pos=punc_pos_bits_origin
+%     fprintf(fileID, '%d ', pos);
+% end
+% fprintf(fileID, '\n');
+% fclose(fileID);
 
-% write Transmit Extra VN node 
-fileID = fopen(Transmit_Extra_VNs_file, 'w');
-for pos=Transmit_Extra_VNs
-    fprintf(fileID, '%d ', pos);
-end
-fprintf(fileID, '\n');
-fclose(fileID);
 
-% write Extra_Transmit_OnPayload_vn
-fileID = fopen(Transmit_Extra_VNs_file, 'w');
-for pos=Extra_Transmit_OnPayload_vn
-    fprintf(fileID, '%d ', pos);
-end
-fprintf(fileID, '\n');
-fclose(fileID);
+T = table(Transmit_Extra_VNs.',Extra_Transmit_OnPayload_vn.','VariableNames', {'Extra_VNs', 'Payload_VNs'});  % 建立 table
+writetable(T, Transmit_Extra_VNs_table_file);  % 輸出 csv
 
 %%
 % 範例二維矩陣（只有0與1）
@@ -135,4 +133,3 @@ function ref = getExcelRange(col, row)
     end
     ref = [letters, num2str(row)];
 end
-

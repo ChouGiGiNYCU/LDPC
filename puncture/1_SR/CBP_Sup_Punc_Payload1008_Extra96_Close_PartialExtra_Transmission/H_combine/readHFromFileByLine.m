@@ -8,19 +8,19 @@ function H_matrix = readHFromFileByLine(file_name)
     H_size = sscanf(line, '%d'); % 解析該行的數字，轉換為數字陣列
     cols = H_size(1);
     rows= H_size(2);
-    disp(H_size.')
+    % disp(H_size.')
     line = fgetl(fileID); % 讀取最大權重
     max_weights = sscanf(line, '%d');
-    disp(max_weights.')
+    % disp(max_weights.')
     
     % Read the next part which gives row weights
     line = fgetl(fileID);
     cols_weights = sscanf(line, '%d');
-    disp(cols_weights.');
+    % disp(cols_weights.');
 
     line = fgetl(fileID);
     rows_weights = sscanf(line, '%d');
-    disp(rows_weights.')
+    % disp(rows_weights.')
     
     % Initialize the H matrix with zeros
     H_matrix = zeros(rows, cols);

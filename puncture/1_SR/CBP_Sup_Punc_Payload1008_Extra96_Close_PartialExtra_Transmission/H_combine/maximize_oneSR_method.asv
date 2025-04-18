@@ -43,10 +43,7 @@ function position = maximize_oneSR_method(H,puncture_bits_num)
         end
         % Fixed 表示不能動的 vn node(動的話，就會有puncture node失去最後一個SCN)
         Candidate = setdiff(Candidate,Fixed);
-        Candidate = setdiff(Candidate,Index);
-        if isempty(Candidate) 
-            break;
-        end
+
         % 選擇的 VN 所連接的SCN要越少越好 (影響越小)
         choose_vn = Candidate(1);
         Nei_choosen_vn_CNs = transpose(find(H(:,choose_vn)==1));
@@ -66,10 +63,11 @@ function position = maximize_oneSR_method(H,puncture_bits_num)
 
         Index = union(Index,choose_vn);
         All_sc = union(All_sc,Nei_choosen_vn_CNs);
-        Remain_c = setdiff(Remain_c,All_sc);
+
         if length(remain_SCN)==1
             CN = remain_SCN(1);
             Nei_CN_VNs = find(H(CN,:)==1);
+            Remain_c = setdiff(Remain_c,All_sc);
             Fixed = union(Fixed,Nei_CN_VNs);
         end
 
@@ -86,8 +84,6 @@ function position = maximize_oneSR_method(H,puncture_bits_num)
         sentence = sprintf("Step2 - Find nonSCN current length : %d) !!",length(Index));
         disp(sentence);
     end
-    position = sort(Index);
-    return;
     % 最後一部 是把punctured vn 的SCN多的慢慢刪減，找到而外的1-SR node
     % 未完待續
 end
