@@ -1,0 +1,10 @@
+VN0 -> CN0 -> VN1 -> CN2 -> VN4 -> CN1 -> VN0
+VN0 -> CN0 -> VN2 -> CN3 -> VN5 -> CN1 -> VN0
+VN0 -> CN0 -> VN3 -> CN4 -> VN6 -> CN1 -> VN0
+VN1 -> CN0 -> VN2 -> CN3 -> VN7 -> CN2 -> VN1
+VN1 -> CN0 -> VN3 -> CN4 -> VN8 -> CN2 -> VN1
+VN2 -> CN0 -> VN3 -> CN4 -> VN9 -> CN3 -> VN2
+VN4 -> CN1 -> VN5 -> CN3 -> VN7 -> CN2 -> VN4
+VN4 -> CN1 -> VN6 -> CN4 -> VN8 -> CN2 -> VN4
+VN5 -> CN1 -> VN6 -> CN4 -> VN9 -> CN3 -> VN5
+VN7 -> CN2 -> VN8 -> CN4 -> VN9 -> CN3 -> VN7
