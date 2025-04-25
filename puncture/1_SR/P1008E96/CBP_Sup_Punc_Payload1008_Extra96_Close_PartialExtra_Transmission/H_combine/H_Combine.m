@@ -6,17 +6,19 @@ close all;
 H1_file = 'C:\Users\USER\Desktop\LDPC\PCM\PEGReg504x1008.txt'; % payload data
 H2_file = 'C:\Users\USER\Desktop\LDPC\PCM\H_96_48.txt'; % extra data
 Each_VNs_Girth_num_file = "Each_VN_Girth_Record_H96x48.csv";
-H_combine_file = 'PCM_P1008_E96_PartialExtraTransmit_1SR_50.txt';
-puncture_position_bits_file = "Table_Superposition_Extra_Payload_50.csv";
-Transmit_Extra_VNs_table_file     = "Table_ExtraTransmitVNs_to_PuncPosPayload_50.csv";
+H_combine_file = 'PCM_P1008_E96_PartialExtraTransmit_1SR_77.txt';
+puncture_position_bits_file = "Table_Superposition_Extra_Payload_77.csv"; % 對應payload 、 extra puncture位置(原本的方法)
+Transmit_Extra_VNs_table_file     = "Table_ExtraTransmitVNs_to_PuncPosPayload_77.csv"; % 傳送的extra bits 位置 、不傳送的payload bits
 
 H1 = readHFromFileByLine(H1_file);
 H2 = readHFromFileByLine(H2_file);
 [H1_r,H1_c] = size(H1);
 [H2_r,H2_c] = size(H2);
+%% 讀取每個VN經過girth的數量多寡 來決定傳送的 Extra transmit VNs
 Extra_Transmit_Ratio = 0.5;
-Extra_Transmit_number = floor(Extra_Transmit_Ratio *  H2_c);
-Punc_p_r = H2_c-Extra_Transmit_number;
+% Extra_Transmit_number = floor(Extra_Transmit_Ratio *  H2_c);
+Extra_Transmit_number = 77;
+% 把Extra VN 分成 Transmit and Superposition 
 % read Each_VNs_Girth_num_file 
 Each_VNs_Girth_num = readtable(Each_VNs_Girth_num_file);
 vn = Each_VNs_Girth_num.VN; 
@@ -27,8 +29,19 @@ vn_sorted = vn(idx); % 排序後的 vn 與 girth_node
 girth_sorted = girth_num(idx);
 % 要傳送的部分 Extra VNs
 Transmit_Extra_VNs = vn_sorted(1:Extra_Transmit_number).' + 1; % idx =1
-
-
+remaining_Extra_VN = setdiff(1:H2_c, Transmit_Extra_VNs);  % 找出剩下的部分
+%%  random choose Extra transmit VNs
+Extra_Transmit_Ratio = 0.5;
+Extra_Transmit_number = floor(Extra_Transmit_Ratio *  H2_c);
+Transmit_Extra_VNs = randperm(H2_c,Extra_Transmit_number); % random choose
+remaining_Extra_VN = setdiff(1:H2_c, Transmit_Extra_VNs);  % 找出剩下的部分
+%% Extra transmit non 1-SR node 
+NonTrasmit_VNs = maximize_oneSR_method(H2,40); % idx = 1
+Extra_Transmit_number = H2_c - size(NonTrasmit_VNs,2);
+Transmit_Extra_VNs = setdiff(1:H2_c, NonTrasmit_VNs);  % 找出剩下的部分
+remaining_Extra_VN = NonTrasmit_VNs; % 不傳的VNs要跟payload 做結合
+%%
+Punc_p_r = H2_c-Extra_Transmit_number;
 % H_combine = [  H1     zero1       zero2 
 %               zero3     H2        zero4
 %               punc_p  punc_e        I
@@ -54,7 +67,7 @@ for r=1:Punc_p_r
     punc_payload_mat(r,punc_vn) = 1;
 end
 punc_extra_mat = zeros([Punc_p_r H2_c]);
-remaining_Extra_VN = setdiff(1:H2_c, Transmit_Extra_VNs);  % 找出剩下的部分
+
 for r=1:Punc_p_r
     remain_vn = remaining_Extra_VN(r);
     punc_extra_mat(r,remain_vn) = 1;
@@ -126,4 +139,3 @@ function ref = getExcelRange(col, row)
     end
     ref = [letters, num2str(row)];
 end
-
