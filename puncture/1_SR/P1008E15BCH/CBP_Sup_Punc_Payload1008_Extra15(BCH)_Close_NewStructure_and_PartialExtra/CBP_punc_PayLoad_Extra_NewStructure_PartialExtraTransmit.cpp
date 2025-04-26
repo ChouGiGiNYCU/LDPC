@@ -258,7 +258,7 @@ int main(int argc,char* argv[]){
             // setting puncture bits - Extra_VNs
             for(int i=PayLoad_H.n;i<(PayLoad_H.n+Extra_H.n);i++) receiver_LLR[i] = 0;
              // 部分Extra 傳送過來的資訊要放上去
-            for(auto& table:Superposition_origin){
+            for(auto& table:Table_ExtraTransmit_PayloadPunc){
                 int extra_vn = table.first;
                 int payload_vn = table.second;
                 receiver_LLR[PayLoad_H.n+extra_vn] = receiver_LLR[payload_vn]; 
