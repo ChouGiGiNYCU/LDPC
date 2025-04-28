@@ -275,7 +275,7 @@ int main(int argc,char* argv[]){
             for(int i=(PayLoad_H.n+Extra_H.n+nonTransmit_Extra_Vns_num);i<(PayLoad_H.n+Extra_H.n+nonTransmit_Extra_Vns_num*2);i++) receiver_LLR[i] = 0; // be punctured
             // setting puncture bits - Extra^Payload1^Payload2_VNs
             auto pair_iter1  = Superpostion_Payload_Extra_NewStructure.begin();
-            for(int i=(PayLoad_H.n+Extra_H.n+nonTransmit_Extra_Vns_num*2);i<(PayLoad_H.n+Extra_H.n+nonTransmit_Extra_Vns_num*3) && pair_iter1!=Superpostion_Payload_Extra_NewStructure.end();i++,pair_iter++){
+            for(int i=(PayLoad_H.n+Extra_H.n+nonTransmit_Extra_Vns_num*2);i<(PayLoad_H.n+Extra_H.n+nonTransmit_Extra_Vns_num*3) && pair_iter1!=Superpostion_Payload_Extra_NewStructure.end();i++,pair_iter1++){
                 int Payload_punc_pos = pair_iter1->payload_vn_punc;
                 receiver_LLR[i] = receiver_LLR[Payload_punc_pos];
                 receiver_LLR[Payload_punc_pos] = 0;
