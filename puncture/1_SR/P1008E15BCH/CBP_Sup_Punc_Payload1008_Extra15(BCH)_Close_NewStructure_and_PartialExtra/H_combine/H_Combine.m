@@ -5,10 +5,10 @@ close all;
 %%
 H1_file = 'C:\Users\USER\Desktop\LDPC\PCM\PEGReg504x1008.txt'; % payload data
 H2_file = 'C:\Users\USER\Desktop\LDPC\PCM\BCH_15_7.txt'; % extra data
-H_combine_file = 'PCM_P1008_E15BCH_Structure_Partial_Combine.txt';
-puncture_position_bits_outfile = "Table_Superposition_Extra_Payload.csv"; % 對應payload 、 extra puncture位置(原本的方法)
-Transmit_Extra_VNs_table_outfile     = "Table_ExtraTransmitVNs_to_PuncPosPayload.csv"; % 傳送的extra bits 位置 、不傳送的payload bits file
-New_puncture_position_bits_outfile = "Punc_Superpostion_new_Payload_Structure_Partial_Combine.csv";
+H_combine_file = 'PCM_P1008_E15BCH_Structure_Partial_Combine_20percent.txt';
+puncture_position_bits_outfile = "Table_Superposition_Extra_Payload_20percent.csv"; % 對應payload 、 extra puncture位置(原本的方法)
+Transmit_Extra_VNs_table_outfile     = "Table_ExtraTransmitVNs_to_PuncPosPayload_20percent.csv"; % 傳送的extra bits 位置 、不傳送的payload bits file
+New_puncture_position_bits_outfile = "Punc_Superpostion_new_Payload_Structure_Partial_Combine_20percent.csv";
 
 H1 = readHFromFileByLine(H1_file);
 H2 = readHFromFileByLine(H2_file);
@@ -16,9 +16,10 @@ H2 = readHFromFileByLine(H2_file);
 [H2_r,H2_c] = size(H2);
 Non_select_VNs = 1:H1_c;
 %%  random choose Extra transmit VNs
-Extra_Transmit_Ratio = 0.5;
+Extra_Transmit_Ratio = 0.2;
 Extra_Transmit_number = floor(Extra_Transmit_Ratio *  H2_c);
 Transmit_Extra_VNs = randperm(H2_c,Extra_Transmit_number); % random choose extra vn
+Transmit_Extra_VNs = sort(Transmit_Extra_VNs);
 non_Transmit_Extra_VNs = setdiff(1:H2_c, Transmit_Extra_VNs);  % 找出剩下沒有傳送的Extra_bits
 
 non_Transmit_Extra_VNs_num = size(non_Transmit_Extra_VNs,2);
