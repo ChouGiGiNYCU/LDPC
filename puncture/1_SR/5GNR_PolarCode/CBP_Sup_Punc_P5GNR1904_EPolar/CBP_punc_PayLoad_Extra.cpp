@@ -223,6 +223,7 @@ int main(int argc,char* argv[]){
                     frozen_idx++;
                 }
             }
+            
             GF2_Mat_Vec_Dot(extra_info,Extra_Transpose_G,extra_Encode);
             
             // PayLoad xor Extra
@@ -548,7 +549,7 @@ vector<int> Read_Frozen_file(string file){
     int bit;
     // 只要還能從 fin 讀到一個整數，就推入 vector
     while (Frozen_file >> bit) {
-        Frozen_map.push_back(bit);
+        Frozen_map.push_back((bit-1));
     }
     return Frozen_map;
 }
