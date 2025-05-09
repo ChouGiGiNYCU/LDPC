@@ -385,7 +385,6 @@ int main(int argc,char* argv[]){
                 extra_error_bit = extra_check_result.count();
                 if(extra_error_bit>0) extra_bit_error_flag = true;
                 extra_bit_error_count[it] += static_cast<double>(extra_error_bit);
-               
                 
                 it++;
             }
