@@ -1,11 +1,27 @@
-function position = maximize_oneSR_method(H,puncture_bits_num)
+function position = maximize_oneSR_method(Payload_H,puncture_bits_num,Already_Punc_Vns)
     position = [];
+    H = Payload_H.mat;
     [rows,cols] = size(H);
     Remain_c = [1:rows]; % CNs - 連接的vn都沒被puncture過
     Fixed = []; % unpunctured vn node
     Index = []; % punctured vn node
     All_sc = [-1]; % the set of all survived cn(SCN)
     Candidate = [1:cols]; % VNs 可以被punctured的vn set 
+    %% pre-process Already punc vns
+    for VN=Already_Punc_Vns
+        Nei_SCNs = transpose(find(H(:,VN)==1)); % puncture vn node 的 scn 
+        All_sc = union(All_sc,Nei_SCNs);
+        Remain_c = setdiff(Remain_c, All_sc);
+        Index = union(Index,VN); % punctured node union
+        same_VNs = setdiff(1:cols,VN);
+        for SCN=Nei_SCNs
+            Nei_SCN_VNs = find(H(SCN,:)==1);
+            Candidate = setdiff(Candidate,Nei_SCN_VNs);
+            same_VNs = intersect(same_VNs,Nei_SCN_VNs);
+        end
+        Fixed = union(Fixed,same_VNs); % 如果此 punc VN 的Nei_SCN_VNs 都有共用一個 vn的話，此 vn 不能被 punc
+    end
+    %%
     while ~isempty(Candidate)
         idx = randi(length(Candidate)); % produce 1:size(Candidate) random integer
         VN = Candidate(idx);
@@ -32,7 +48,9 @@ function position = maximize_oneSR_method(H,puncture_bits_num)
         position = sort(Index(selected_indices));
         return;
     end
-    
+
+    sentence= sprintf('Fixed : %s \n',num2str(Fixed));
+    disp(sentence);
     sentence= sprintf('Remain_c : %s \n',num2str(Remain_c));
     disp(sentence);
     sentence = sprintf("Step1 Finish - Find nonSCN connect vn to 1-SR !! - length : %d) !!",length(Index));
@@ -121,7 +139,7 @@ function position = maximize_oneSR_method(H,puncture_bits_num)
     disp(sentence);
     %% step3
     % 最後一部 是把punctured vn 的SCN多的慢慢刪減，找到而外的1-SR node
-    while length(Index)~=puncture_bits_num
+    while length(Index)<puncture_bits_num
         Candidate_c = [];
         % 初始化
         VN = Index(1);
@@ -180,7 +198,7 @@ function position = maximize_oneSR_method(H,puncture_bits_num)
             Nei_SCN_num = 0; % 找出 SCN 數量 
             for SCN=Nei_VN_CNs
                 Nei_SCN_VNs = setdiff(find(H(SCN,:)==1),VN);
-                if ~any(ismember(Index,Nei_SCN_VNs))
+                if any(ismember(Index,Nei_SCN_VNs)) % fix this line
                     Nei_SCN_num = Nei_SCN_num + 1;
                 end
             end
@@ -233,17 +251,23 @@ function position = maximize_oneSR_method(H,puncture_bits_num)
                 Nei_choosen_vn_CNs = transpose(find(H(:,choose_vn)==1));
                 All_sc = union(All_sc,Nei_choosen_vn_CNs);
             end
+
+            if  length(Index)==puncture_bits_num
+                disp(sentence);
+                position = sort(Index);
+                break;
+            end
         end
         
         if length(Index)==puncture_bits_num
             sentence = sprintf("Step3 - Find nonSCN connect vn to 1-SR !! - length : %d) !!",length(Index));
             disp(sentence);
             position = sort(Index);
-            return;
+            break;
         end
         sentence = sprintf("Step3 - Find nonSCN connect vn to 1-SR !! - length : %d) !!",length(Index));
         disp(sentence);
     end
     position = sort(Index);
-    return;
+
 end
