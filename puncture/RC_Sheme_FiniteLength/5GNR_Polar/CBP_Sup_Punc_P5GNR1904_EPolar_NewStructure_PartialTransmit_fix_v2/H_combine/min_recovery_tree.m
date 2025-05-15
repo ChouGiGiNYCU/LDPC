@@ -26,14 +26,14 @@ function U_CN = min_recovery_tree(H,CN2VN_pos,VN2CN_pos,Punc_VNs,CNs)
     while ~isempty(copy_Punc_VNs)
         for Punc_VN=copy_Punc_VNs
             min_NeiVNs = 1e9;
-            for Nei_CN=VN2CN_pos{punc_vn}
+            for Nei_CN=VN2CN_pos{Punc_VN}
                 % 此 Nei_CN 所連接的unpunc vn數量 + 如果有punc，punc_vn 所連接的到最小的 unpunc_vn數量
                 Can_Recovery_flag = true;
                 Nei_CN_CanRecovery_PuncVN_num = 0; 
                 Nei_CN_VNs = setdiff(CN2VN_pos{Nei_CN},Punc_VN);
                 for Nei_CN_VN=Nei_CN_VNs 
                     
-                    if any(ismember(Punc_VN,Nei_CN_VN)) % 此Nei_CN_VN 為 Punc_VN
+                    if any(ismember(Punc_VNs,Nei_CN_VN)) % 此Nei_CN_VN 為 Punc_VN
                         if min_NeiVNs_to_PuncVNs_num(Nei_CN_VN)~=0 % 此Nei_CN_VN 已經找到最小的recovery tree了 
                             Nei_CN_CanRecovery_PuncVN_num = Nei_CN_CanRecovery_PuncVN_num + min_NeiVNs_to_PuncVNs_num(Nei_CN_VN);
                         else

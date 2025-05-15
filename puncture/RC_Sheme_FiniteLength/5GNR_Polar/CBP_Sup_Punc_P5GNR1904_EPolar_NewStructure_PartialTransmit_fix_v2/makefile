@@ -11,18 +11,18 @@ Iteration_Limit = 200
 payload_PCM  = /mnt/c/Users/USER/Desktop/LDPC/PCM/H_1904_616_1288_BG1_Z28_fix.txt
 Z            = 28
 extra_PCM    = Dence_PCM.txt
-Combine_PCM  = PCM_P5G1904_E16Polr_NewStructure_Partial50percent_RCScheme.txt
+Combine_PCM  = PCM_P5G1904_E16Polr_NewStructure_Partial50percent_RCScheme_fix.txt
 Superposition_Payload_Extra_origin_file          = Table_Superposition_Extra_Payload_50percent.csv
 Table_ExtraTransmit_PayloadPunc_file             = Table_ExtraTransmitVNs_to_PuncPosPayload_50percent.csv
 Superpostion_Payload_Extra_NewStructure_pos_file = ExtraVNs_NewStrcuture_50percent.csv
 
-PayLoad_out_file = Punc_RCScheme_P5G1904_E16Polar_PayLoad_it$(Iteration_Limit)_NewStructure2_PartialExtraTransmit_Open100.csv
-Extra_out_file   = Punc_RCScheme_P5G1904_E16Polar_Extra_it$(Iteration_Limit)_NewStructure2_PartialExtraTransmit_Open100.csv
-Super_out_file   = Punc_RCScheme_P5G1904_E16Polar_Sup_it$(Iteration_Limit)_NewStructure2_PartialExtraTransmit_Open100.csv
+PayLoad_out_file = Punc_RCScheme_fix_P5G1904_E16Polar_PayLoad_it$(Iteration_Limit)_NewStruc2_PartExtra_Open100.csv
+Extra_out_file   = Punc_RCScheme_fix_P5G1904_E16Polar_Extra_it$(Iteration_Limit)_NewStruc2_PartExtra_Open100.csv
+Super_out_file   = Punc_RCScheme_fix_P5G1904_E16Polar_Sup_it$(Iteration_Limit)_NewStruc2_PartExtra_Open100.csv
 ############# G setting ###########
-payload_Generater_matrix_file = None
+payload_Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/H_1904_616_1288_BG1_Z28_fix_G.txt
 
-Frozen_bits_file  = frozen_bits_pos.txt
+Frozen_bits_file      = frozen_bits_pos.txt
 Non_Frozen_bits_file  = non_frozen_bits_pos.txt
 ###################################
 Open_Iteration = 100
