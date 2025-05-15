@@ -13,14 +13,14 @@ Open_Iteration = 100
 payload_PCM       = /mnt/c/Users/USER/Desktop/LDPC/PCM/H_1904_616_1288_BG1_Z28_fix.txt
 Z                 = 28
 extra_PCM         = Dence_PCM.txt
-Combine_PCM       = PCM_5GNR1904_Polar16_RCSheme.txt
-puncture_pos_file = Punc_Pos_PCM_5GNR1904_Polar16_RCSheme.txt
+Combine_PCM       = PCM_5GNR1904_Polar16_RCSheme_fix.txt
+puncture_pos_file = Punc_Pos_PCM_5GNR1904_Polar16_RCSheme_fix.txt
 PayLoad_out_file  = Punc_RCSheme_P1904_E16_PayLoad_it$(Iteration_Limit)_Open$(Open_Iteration).csv
 Extra_out_file    = Punc_RCSheme_P1904_E16_Extra_it$(Iteration_Limit)_Open$(Open_Iteration).csv
 Frozen_bits_file  = frozen_bits_pos.txt
 Non_Frozen_bits_file  = non_frozen_bits_pos.txt
 ############# G setting ###########
-payload_Generater_matrix_file = None
+payload_Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/H_1904_616_1288_BG1_Z28_fix_G.txt
 # payload_Encdoe_Flag = 0
 ###################################
 
