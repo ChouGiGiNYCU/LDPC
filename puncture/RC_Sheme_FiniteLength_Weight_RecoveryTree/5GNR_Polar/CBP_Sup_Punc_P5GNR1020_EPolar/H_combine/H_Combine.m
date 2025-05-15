@@ -5,7 +5,7 @@ close all;
 %%
 PayloadH_file = 'C:\Users\USER\Desktop\LDPC\PCM\H_1020_330_690_BG1_Z15_fix.txt'; % payload data
 ExtraH_file = 'C:\Users\USER\Desktop\LDPC\PCM\Polar_16_fix.txt'; % extra data
-H_combine_file = 'PCM_5GNR1020_Polar16_RCSheme_fix.txt';
+H_combine_file = 'PCM_5GNR1020_Polar16_RCSheme_WeightTree.txt';
 puncture_position_bits_file = ['Punc_Pos_', H_combine_file];
 Z  = 15;
 
