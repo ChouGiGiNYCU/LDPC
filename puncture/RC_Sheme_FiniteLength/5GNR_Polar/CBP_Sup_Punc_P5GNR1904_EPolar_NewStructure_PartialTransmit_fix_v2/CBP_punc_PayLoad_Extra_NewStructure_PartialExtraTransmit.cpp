@@ -35,7 +35,7 @@ vector<int> Read_Frozen_file(string file);
 
 
 int main(int argc,char* argv[]){
-    double frame_error_lowwer_bound = 150;
+    double frame_error_lowwer_bound = 50;
     if(argc < 2){
         cout << "** Error ---- No file in \n" ; 
     }
