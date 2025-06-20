@@ -3,8 +3,8 @@ CFLAGS = -Wfatal-errors -std=c++11
 TARGET = CBP_punc_PayLoad_Extra_NewStructure_PartialExtraTransmit
 SRCS   = CBP_punc_PayLoad_Extra_NewStructure_PartialExtraTransmit.cpp
 ##########################
-SNR_min         = 2
-SNR_max         = 2.5
+SNR_min         = 1
+SNR_max         = 2
 SNR_Ratio       = 0.25
 Iteration_Limit = 200
 ##########################
@@ -16,9 +16,9 @@ Superposition_Payload_Extra_origin_file          = Table_Superposition_Extra_Pay
 Table_ExtraTransmit_PayloadPunc_file             = Table_ExtraTransmitVNs_to_PuncPosPayload_50percent.csv
 Superpostion_Payload_Extra_NewStructure_pos_file = ExtraVNs_NewStrcuture_50percent.csv
 
-PayLoad_out_file = Punc_kSR_P5G1020_E15BCH_PayLoad_it$(Iteration_Limit)_Enhance.csv
-Extra_out_file   = Punc_kSR_P5G1020_E15BCH_Extra_it$(Iteration_Limit)_Enhance.csv
-Super_out_file   = Punc_kSR_P5G1020_E15BCH_Sup_it$(Iteration_Limit)_Enhance.csv
+PayLoad_out_file = Punc_kSR_P5G1020_E15BCH_PayLoad_it$(Iteration_Limit)_Enhanced.csv
+Extra_out_file   = Punc_kSR_P5G1020_E15BCH_Extra_it$(Iteration_Limit)_Enhanced.csv
+Super_out_file   = Punc_kSR_P5G1020_E15BCH_Sup_it$(Iteration_Limit)_Enhanced.csv
 ############# G setting ###########
 payload_Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/H_1020_330_690_BG1_Z15_fix_G.txt
 extra_Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/BCH_15_7_G.txt
