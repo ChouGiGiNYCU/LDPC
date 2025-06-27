@@ -84,7 +84,7 @@ int main(int argc,char* argv[]){
     double *transmit_codeword = (double*)calloc(H.n,sizeof(double));
     
     double *receiver_LLR = (double*)malloc(H.n*sizeof(double));
-    double code_rate = (double)(H.n-H.m)/(double)H.n;
+    double code_rate = (double)(H.n-H.m)/(double)(H.n-2*Z);
     double ** CN_2_VN_LLR = (double**)malloc(sizeof(double*)*H.n);
     for(int i=0;i<H.n;i++) CN_2_VN_LLR[i]=(double*)calloc(H.max_col_arr[i],sizeof(double));
     double ** VN_2_CN_LLR = (double**)malloc(sizeof(double*)*H.m);
