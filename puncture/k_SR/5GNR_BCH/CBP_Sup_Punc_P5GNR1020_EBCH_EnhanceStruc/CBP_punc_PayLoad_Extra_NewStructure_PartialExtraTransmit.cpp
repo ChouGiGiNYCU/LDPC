@@ -174,7 +174,7 @@ int main(int argc,char* argv[]){
 
     double SNR = SNR_min;
     // ((Payload info) + length(Extra Codeword))/ length(Payload CodeWord) 
-    double code_rate = (double)(PayLoad_H.n-PayLoad_H.m+Extra_Origin_G.size())/(double)PayLoad_H.n; 
+    double code_rate = (double)(PayLoad_H.n-PayLoad_H.m+Extra_Origin_G.size())/(double)(PayLoad_H.n-2*Z); 
     cout << "CodeRate : " << code_rate << "\n";
      
     vector<vector<double>> CN_2_VN_LLR(H.n);  // Vector of vectors for CN to VN LLR
