@@ -33,14 +33,13 @@ int main(int argc,char* argv[]){
     double SNR_max = atof(argv[10]);
     double SNR_ratio = atof(argv[11]);
     int iteration_open = atoi(argv[12]); // Open_Iteration
-    string puncture_pos_file = argv[13];
-    int punc_vn_nums = atoi(argv[14]);
+    string RV1_punc_file = argv[13];
+    int RV1_punc_nums = atoi(argv[14]);
     string out_file = argv[15];
     cout << "##############################" << "\n";
     cout << "H_combine_file : " << H_combine_file << "\n";
     cout << "Payload PCM file : " << Payload_PCM_file << "\n";
     cout << "Extra PCM file : " << Extra_PCM_file << "\n";
-    cout << "puncture_pos_file : " << puncture_pos_file << "\n";
     cout << "Payload G file : " << PayLoad_G_file << "\n";
     cout << "PayLoad_Flag : " << PayLoad_Flag << "\n";
     cout << "Extra G file : " << Extra_G_file << "\n";
@@ -51,9 +50,11 @@ int main(int argc,char* argv[]){
     cout << "SNR_ratio : " << SNR_ratio << "\n";
     cout << "iteration_open : " << iteration_open << "\n";
     cout << "Xor_Position_file : " << Xor_Position_file << "\n";
+    cout << "xor_vn_nums : " << xor_vn_nums << "\n";
+    cout << "RV1_punc_file : " << RV1_punc_file << "\n";
+    cout << "RV1_punc_nums : " << RV1_punc_nums << "\n";
     cout << "out_file : " << out_file << "\n";
     cout << "##############################" << "\n";
-    // 
 
     // define H_combine
     struct parity_check H;
@@ -71,8 +72,8 @@ int main(int argc,char* argv[]){
     cout << "Extra_H file read success!!" << endl;
     /*-------------------------------------------*/
     // Read Puncture pos
-    vector<int> punc_map; // RV0
-    punc_map = Read_punc_pos(puncture_pos_file,punc_vn_nums);
+    vector<int> RV1_punc_map; // RV0
+    RV1_punc_map = Read_punc_pos(RV1_punc_file,RV1_punc_nums);
     cout << "Puncture position file read success !!" << endl;
     // Read Xor pos
     vector<int> xor_map; // RV1
@@ -102,30 +103,25 @@ int main(int argc,char* argv[]){
     /*-------------------------------------------*/
     double SNR = SNR_min;
     double code_rate = 0.5; // throught
-    
-    double total_bits = 0;
-    double correct_bits = 0;
-    while(SNR<SNR_max){
-        double frame_count = 0;
-        int it=0;
-        // cout << "SNR : " << SNR << "\n";
+    double total_bits = 0, correct_bits = 0 , sigma = 1;
+    while(SNR<=SNR_max){
         for(double frame_count=0;frame_count<total_frame_count;frame_count++){
             /* Process A with RV0*/
             // decode A version with RV0
             vector<int> A_CodeWord(PayLoad_H.n,0);
-            vector<double> A_LLR = ProcessCodeWord_ReturnLLR(PayLoad_G,PayLoad_H,PayLoad_Flag,1.0,A_CodeWord); // sigmas =1
-            for(int i=0;i<punc_map.size();i++) A_LLR[punc_map[i]] = 0; // punc 7 position(RV1)
+            vector<double> A_LLR = ProcessCodeWord_ReturnLLR(PayLoad_G,PayLoad_H,PayLoad_Flag,sigma,A_CodeWord); // sigmas =1
+            for(int i=0;i<RV1_punc_nums;i++) A_LLR[RV1_punc_map[i]] = 0; // punc 7 position(RV1)
 
             /* -----------------*/
-            bool decode_flag_A = BP_for_Payload(PayLoad_G,PayLoad_H,PayLoad_Flag,SNR,code_rate,iteration_limit,A_LLR);
-            total_bits += (PayLoad_H.n-punc_vn_nums); // total bits
+            bool decode_flag_A = BP_for_Payload(PayLoad_H,SNR,code_rate,iteration_limit,A_LLR);
+            total_bits += (PayLoad_H.n-RV1_punc_nums); // total bits
             if(decode_flag_A==true){
                 correct_bits += PayLoad_H.n - PayLoad_H.m; // info bits
                 continue;
             }
                     
             // decode B version RV0 + A RV1
-            vector<int> B_CodeWord(H.n,0);
+            vector<int> B_CodeWord(PayLoad_H.n,0);
             vector<double> B_LLR(H.n,0);
             if(PayLoad_Flag){ // 處理 Payload CodeWord 是zero 還是Encode
                 vector<bool> info_bits((PayLoad_G.size()));
@@ -138,11 +134,11 @@ int main(int argc,char* argv[]){
                 }
             }
             // do A parital CodeWord to Encode(BCH)
-            vector<bool> info_bits(punc_map.size(),0);
+            vector<bool> info_bits(RV1_punc_nums,0);
             // cout << "punc_map size : " << punc_map.size() << endl;
-            for(int i=0;i<punc_map.size();i++){
-                int vn_pos = punc_map[i];
-                info_bits[i] = A_CodeWord[vn_pos] % 2;
+            for(int i=0;i<RV1_punc_nums;i++){
+                int vn_pos = RV1_punc_map[i];
+                info_bits[i] = A_CodeWord[vn_pos];
             }
             vector<int> Extra_CodeWord = Vector_Dot_Matrix_Int(info_bits,Extra_G);
             for(int i=0;i<Extra_CodeWord.size();i++) Extra_CodeWord[i] = Extra_CodeWord[i] % 2;
@@ -157,26 +153,28 @@ int main(int argc,char* argv[]){
                 double receive_value=(double)(-2*B_CodeWord[i]+1) + 1*gasdev(); // fixed power
                 B_LLR[i]=2*receive_value/pow(1,2); 
             }
-            vector<double> copy_B_LLR = B_LLR; // copy for later use
-            for(int i=0;i<punc_map.size();i++){
-                int punc_vn = punc_map[i]; //  RV1
+            vector<double> B_LLR_copy = B_LLR; // copy for later use
+            for(int i=0;i<RV1_punc_nums;i++){
+                int punc_vn = RV1_punc_map[i]; //  RV1
                 B_LLR[punc_vn] = 0; // RV1
             }
             // assign LLR to correct position
             for(int i=0;i<xor_map.size();i++){
-                int base_pos = PayLoad_H.n + Extra_H.n + i; // 1018 ~ 1027
-                B_LLR[base_pos] = copy_B_LLR[xor_map[i]]; // RV1
+                int base_pos = PayLoad_H.n + Extra_H.n + i; 
+                B_LLR[base_pos] = B_LLR_copy[xor_map[i]]; // RV1
                 B_LLR[xor_map[i]] = 0; // combine H
             }
-            bool decode_flag_B = BP_for_CombineH(PayLoad_G,PayLoad_H,SNR,code_rate,iteration_limit,iteration_open,B_LLR,Extra_G,Extra_H,H);
-            total_bits += PayLoad_H.n;
+            bool decode_flag_B = BP_for_CombineH(PayLoad_H,SNR,code_rate,iteration_limit,iteration_open,B_LLR,Extra_H,H);
+            total_bits += (PayLoad_H.n-RV1_punc_nums);
+
             if(decode_flag_B == true){
                 correct_bits += PayLoad_H.n - PayLoad_H.m; // info bits
-                for(int i=Extra_H.n-punc_map.size();i<Extra_H.n;i++){
-                    int punc_vn = punc_map[i]; // A RV1
-                    A_LLR[punc_vn] = B_CodeWord[punc_vn]==0?B_LLR[punc_vn]:-1*B_LLR[punc_vn]; // A RV1
+                for(int info_idx=Extra_H.n-RV1_punc_nums,RV1_idx=0;info_idx<Extra_H.n;info_idx++,RV1_idx++){
+                    int RV1_punc_vn = RV1_punc_map[RV1_idx]; // A RV1
+                    int Xor_vn = xor_map[info_idx];
+                    A_LLR[RV1_punc_vn] = B_CodeWord[Xor_vn]==0?B_LLR_copy[Xor_vn]:-1*B_LLR_copy[Xor_vn]; // A RV1
                 }
-                bool decode_flag_A = BP_for_Payload(PayLoad_G,PayLoad_H,PayLoad_Flag,SNR,code_rate,iteration_limit,A_LLR);
+                bool decode_flag_A = BP_for_Payload(PayLoad_H,SNR,code_rate,iteration_limit,A_LLR);
                 if(decode_flag_A==true){
                     correct_bits += PayLoad_H.n - PayLoad_H.m; // info bits                    
                 }
@@ -185,6 +183,7 @@ int main(int argc,char* argv[]){
         double throughput = (correct_bits/total_bits);
         outfile << SNR << ", " << throughput << "\n";
         cout << "SNR : " << SNR << " | " << "Throughput : " << throughput << "% |\n ";
+        SNR += SNR_ratio;
     }
 }
 
