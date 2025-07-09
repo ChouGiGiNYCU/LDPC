@@ -14,7 +14,7 @@ vector<int> Read_punc_pos(string file,int  extra_nums);
 vector<double> ProcessCodeWord_ReturnLLR(vector<vector<bool>>& G,struct parity_check H,bool Encode_Flag,double sigma,vector<int>& CodeWord);
 // use all zero to test
 int main(int argc,char* argv[]){
-    double total_frame_count = 1e6;
+    double total_frame_count = 10000;
     if(argc < 2){
         cout << "** Error ---- No file in \n" ; 
     }
@@ -68,16 +68,16 @@ int main(int argc,char* argv[]){
     outfile << "SNR" << ", " << "Throughput" << "\n";
     /*-------------------------------------------*/
     double SNR = SNR_min;
-    double code_rate = 0.5; // throught
-    double total_bits = 0 , correct_bits = 0;
-    double sigma = 1;
+    double code_rate = 1; // throughput
     while(SNR<=SNR_max){
+        double total_bits = 0 , correct_bits = 0;
+        double sigma = sqrt(1/(2*code_rate*pow(10,SNR/10.0)));
         for(double frame_count=0;frame_count<total_frame_count;frame_count++){
-            
             /* ------------- Process A ------------- */
             // decode A version with RV0
             vector<int> A_CodeWord(PayLoad_H.n,0);
             vector<double> A_LLR(PayLoad_H.n,0);
+            vector<double> A_LLR_copy(PayLoad_H.n,0);
             if(PayLoad_Flag) A_LLR = ProcessCodeWord_ReturnLLR(PayLoad_G,PayLoad_H,PayLoad_Flag,sigma,A_CodeWord); // sigmas =1
             else{ // all zero test
                 for(int i=0;i<PayLoad_H.n;i++){ // Count LLR  | BPSK -> {0->1}、{1->-1}
@@ -85,50 +85,21 @@ int main(int argc,char* argv[]){
                     A_LLR[i] = 2*receive_value/pow(sigma,2); 
                 }
             }
+            A_LLR_copy = A_LLR;
             for(int i=0;i<RV1_punc_nums;i++) A_LLR[RV1_punc_map[i]] = 0; // punc 7 position(RV1)
-            
             /* -----------------*/
-            bool decode_flag_A = BP_for_Payload(PayLoad_H,SNR,code_rate,iteration_limit,A_LLR);
+            bool decode_flag_A = BP_for_Payload(PayLoad_H,SNR,iteration_limit,A_LLR,A_CodeWord);
             total_bits += (PayLoad_H.n-RV1_punc_nums); // total bits
+            
             if(decode_flag_A){
                 correct_bits += PayLoad_H.n - PayLoad_H.m; // info bits
                 continue;
             }
             /* ------------- Process B ------------- */
-            // decode B (A RV1 CodeWord + B info) to Encode
-            vector<int> B_CodeWord(PayLoad_H.n,0);
-            vector<double> B_LLR(PayLoad_H.n,0);
-            vector<double> B_LLR_copy;
-            if(PayLoad_Flag){ // 處理 Payload CodeWord 是zero 還是Encode
-                vector<bool> info_bits((PayLoad_G.size()),0);
-                for(int i=0;i<RV1_punc_nums;i++){
-                    int vn_pos = RV1_punc_map[i];
-                    info_bits[i] = A_CodeWord[vn_pos];
-                }
-                for(int i=RV1_punc_nums;i<PayLoad_G.size();i++){
-                    info_bits[i] = random_generation()>0.5?1:0;
-                }
-                B_CodeWord = Vector_Dot_Matrix_Int(info_bits,PayLoad_G);
-                for(int i=0;i<B_CodeWord.size();i++) B_CodeWord[i] = B_CodeWord[i]%2;
-            }
-            for(int i=0;i<PayLoad_H.n;i++){
-                double receive_value=(double)(-2*B_CodeWord[i]+1) + sigma*gasdev(); // fixed power
-                B_LLR[i]=2*receive_value/pow(sigma,2); 
-            }
-            B_LLR_copy = B_LLR;
-            bool decode_flag_B = BP_for_Payload(PayLoad_H,SNR,code_rate,iteration_limit,B_LLR);
-            total_bits += PayLoad_H.n;
-
+            bool decode_flag_B = BP_for_Payload(PayLoad_H,SNR,iteration_limit,A_LLR_copy,A_CodeWord);
+            total_bits += RV1_punc_nums;
             if(decode_flag_B == true){
-                correct_bits += (PayLoad_H.n - PayLoad_H.m) - RV1_punc_nums; // info bits
-                for(int vn=(PayLoad_H.n-PayLoad_H.m),i=0;vn<(PayLoad_H.n-PayLoad_H.m+RV1_punc_nums);vn++,i++){ // [parity bits | info bits]
-                    int punc_vn = RV1_punc_map[i]; // A RV1
-                    A_LLR[punc_vn] = B_CodeWord[vn]==0?B_LLR_copy[vn]:-1*B_LLR_copy[vn]; // A RV1
-                }
-                bool decode_flag_A = BP_for_Payload(PayLoad_H,SNR,code_rate,iteration_limit,A_LLR);
-                if(decode_flag_A==true){
-                    correct_bits += PayLoad_H.n - PayLoad_H.m; // info bits                    
-                }
+                correct_bits += (PayLoad_H.n - PayLoad_H.m); // info bits
             }
         }
         double throughput = (correct_bits/total_bits);

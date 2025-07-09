@@ -10,7 +10,7 @@ double phi(double x){
     return -log(yy) + 1e-14;
 }
 
-bool BP_for_Payload(struct parity_check H, double SNR, double code_rate, int iteration_limit,const vector<double> receiver_LLR){
+bool BP_for_Payload(struct parity_check H, double SNR, int iteration_limit,const vector<double> receiver_LLR,const vector<int>& CodeWord){
 
     double ** CN_2_VN_LLR = (double**)malloc(sizeof(double*)*H.n);
     for(int i=0;i<H.n;i++) CN_2_VN_LLR[i]=(double*)calloc(H.max_col_arr[i],sizeof(double));
@@ -104,7 +104,12 @@ bool BP_for_Payload(struct parity_check H, double SNR, double code_rate, int ite
     for(int i=0;i<H.m;i++) free(VN_2_CN_LLR[i]);
     free(VN_2_CN_LLR);
     free(Guess_CodeWord);
-
+    for(int i=0;i<H.n;i++){
+        if(Guess_CodeWord[i]!=CodeWord[i]){
+           error_syndrome = true;
+           break; 
+        } 
+    }
     return error_syndrome==true?false:true;
 }
 
