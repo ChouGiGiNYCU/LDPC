@@ -11,31 +11,29 @@ using namespace std;
 void Read_File_H(struct parity_check *H,string& file_name_in);
 vector<vector<bool>> Read_File_G(string& file_name);
 vector<int> Read_punc_pos(string file,int  extra_nums);
-vector<double> ProcessCodeWord_ReturnLLR(vector<vector<bool>>& G,struct parity_check H,bool Encode_Flag,double sigma,vector<int>& CodeWord);
-vector<double> ProcessXorCodeWord_ReturnLLR(vector<vector<bool>>& Payload_G,struct parity_check Payload_H,bool Payload_Encode_Flag,double sigma,vector<int>& CodeWordA,vector<int>& CodeWordB,vector<int>& punc_map,vector<int>& xor_map,vector<vector<bool>>& Extra_G,struct parity_check H);
+void Encode_Process(const vector<vector<bool>>& G,const struct parity_check H,bool Encode_Flag,vector<int>& CodeWord);
+vector<double> LLR_Process(const struct parity_check H,const vector<int>& CodeWord,double sigma);
 
 int main(int argc,char* argv[]){
-    double total_frame_count = 1e6;
+    double total_frame_count = 10000;
     if(argc < 2){
         cout << "** Error ---- No file in \n" ; 
     }
     string H_combine_file = argv[1];
     string Payload_PCM_file = argv[2];
     string Extra_PCM_file = argv[3];
-    string  Xor_Position_file = argv[4];
-    int  xor_vn_nums = atoi(argv[5]);
-    string PayLoad_G_file = argv[6]==string("None")?"":argv[6];
+    string PayLoad_G_file = argv[4]==string("None")?"":argv[4];
     bool PayLoad_Flag = PayLoad_G_file==""?false:true;
-    string Extra_G_file = argv[7]==string("None")?"":argv[7];
+    string Extra_G_file = argv[5]==string("None")?"":argv[5];
     bool Extra_Flag = Extra_G_file==""?false:true;
-    int iteration_limit = atoi(argv[8]);
-    double SNR_min = atof(argv[9]);
-    double SNR_max = atof(argv[10]);
-    double SNR_ratio = atof(argv[11]);
-    int iteration_open = atoi(argv[12]); // Open_Iteration
-    string RV1_punc_file = argv[13];
-    int RV1_punc_nums = atoi(argv[14]);
-    string out_file = argv[15];
+    int iteration_limit = atoi(argv[6]);
+    double SNR_min = atof(argv[7]);
+    double SNR_max = atof(argv[8]);
+    double SNR_ratio = atof(argv[9]);
+    int iteration_open = atoi(argv[10]); // Open_Iteration
+    string RV1_punc_file = argv[11];
+    int RV1_punc_nums = atoi(argv[12]);
+    string out_file = argv[13];
     cout << "##############################" << "\n";
     cout << "H_combine_file : " << H_combine_file << "\n";
     cout << "Payload PCM file : " << Payload_PCM_file << "\n";
@@ -49,8 +47,6 @@ int main(int argc,char* argv[]){
     cout << "SNR_max : " << SNR_max << "\n";
     cout << "SNR_ratio : " << SNR_ratio << "\n";
     cout << "iteration_open : " << iteration_open << "\n";
-    cout << "Xor_Position_file : " << Xor_Position_file << "\n";
-    cout << "xor_vn_nums : " << xor_vn_nums << "\n";
     cout << "RV1_punc_file : " << RV1_punc_file << "\n";
     cout << "RV1_punc_nums : " << RV1_punc_nums << "\n";
     cout << "out_file : " << out_file << "\n";
@@ -75,10 +71,6 @@ int main(int argc,char* argv[]){
     vector<int> RV1_punc_map; // RV0
     RV1_punc_map = Read_punc_pos(RV1_punc_file,RV1_punc_nums);
     cout << "Puncture position file read success !!" << endl;
-    // Read Xor pos
-    vector<int> xor_map; // RV1
-    xor_map = Read_punc_pos(Xor_Position_file,xor_vn_nums);
-    cout << "Xor position file read success !!" << endl;
     /*-------------------------------------------*/
      // define PayLoad_G
     vector<vector<bool>> PayLoad_G;
@@ -102,82 +94,58 @@ int main(int argc,char* argv[]){
     outfile << "SNR" << ", " << "Throughput" << "\n";
     /*-------------------------------------------*/
     double SNR = SNR_min;
-    double code_rate = 0.5; // throught
-    double total_bits = 0, correct_bits = 0 , sigma = 1;
+    double code_rate = 1; // throught
     while(SNR<=SNR_max){
+        double total_bits = 0 , correct_bits = 0;
+        double sigma = sqrt(1/(2*code_rate*pow(10,SNR/10.0)));
         for(double frame_count=0;frame_count<total_frame_count;frame_count++){
             /* Process A with RV0*/
             // decode A version with RV0
-            vector<int> A_CodeWord(PayLoad_H.n,0);
-            vector<double> A_LLR = ProcessCodeWord_ReturnLLR(PayLoad_G,PayLoad_H,PayLoad_Flag,sigma,A_CodeWord); // sigmas =1
+            vector<int> A_CodeWord;
+            vector<int> B_CodeWord;
+            Encode_Process(PayLoad_G,PayLoad_H,PayLoad_Flag,A_CodeWord);
+            if(A_CodeWord.size()!=PayLoad_H.n){
+                cout << "Error -- A_CodeWord size is not equal to Payload_H.n\n";
+                exit(1);
+            }
+            Encode_Process(Extra_G,Extra_H,Extra_Flag,B_CodeWord);
+            if(B_CodeWord.size()!=Extra_H.n){
+                cout << "Error -- B_CodeWord size is not equal to Extra_H.n\n";
+                exit(1);
+            }
+            /*RV1 position do LLR combine*/
+            for(int i=0;i<RV1_punc_nums;i++){
+                int pos = RV1_punc_map[i];
+                A_CodeWord[pos] = A_CodeWord[pos] ^ B_CodeWord[i]; 
+            }
+
+            vector<double> A_LLR = LLR_Process(PayLoad_H,A_CodeWord,sigma);
+            vector<double> B_LLR(H.n,0);
+            for(int i=0;i<A_LLR.size();i++) B_LLR[i] = A_LLR[i];
+            
             for(int i=0;i<RV1_punc_nums;i++) A_LLR[RV1_punc_map[i]] = 0; // punc 7 position(RV1)
 
             /* -----------------*/
-            bool decode_flag_A = BP_for_Payload(PayLoad_H,SNR,code_rate,iteration_limit,A_LLR);
+            bool decode_flag_A = BP_for_Payload(PayLoad_H,iteration_limit,A_LLR,A_CodeWord);
             total_bits += (PayLoad_H.n-RV1_punc_nums); // total bits
             if(decode_flag_A==true){
                 correct_bits += PayLoad_H.n - PayLoad_H.m; // info bits
                 continue;
             }
                     
-            // decode B version RV0 + A RV1
-            vector<int> B_CodeWord(PayLoad_H.n,0);
-            vector<double> B_LLR(H.n,0);
-            if(PayLoad_Flag){ // 處理 Payload CodeWord 是zero 還是Encode
-                vector<bool> info_bits((PayLoad_G.size()));
-                for(int i=0;i<PayLoad_G.size();i++){
-                    info_bits[i] = random_generation()>0.5?1:0;
-                }
-                B_CodeWord = Vector_Dot_Matrix_Int(info_bits,PayLoad_G);
-                for(int i=0;i<B_CodeWord.size();i++){
-                    B_CodeWord[i] = B_CodeWord[i]%2;
-                }
+            // decode payload + Extra with Combine H architecture
+            /* Assign LLR to correct position*/
+            for(int vn=PayLoad_H.n;vn<(PayLoad_H.n+Extra_H.n);vn++) B_LLR[vn] = 0;
+            for(int i=0;i<RV1_punc_nums;i++) {
+                int origin_pos = RV1_punc_map[i];
+                int super_pos  = PayLoad_H.n + Extra_H.n + i;
+                B_LLR[super_pos] = B_LLR[origin_pos];  
+                B_LLR[origin_pos] = 0; //  Superposition position
             }
-            // do A parital CodeWord to Encode(BCH)
-            vector<bool> info_bits(RV1_punc_nums,0);
-            // cout << "punc_map size : " << punc_map.size() << endl;
-            for(int i=0;i<RV1_punc_nums;i++){
-                int vn_pos = RV1_punc_map[i];
-                info_bits[i] = A_CodeWord[vn_pos];
-            }
-            vector<int> Extra_CodeWord = Vector_Dot_Matrix_Int(info_bits,Extra_G);
-            for(int i=0;i<Extra_CodeWord.size();i++) Extra_CodeWord[i] = Extra_CodeWord[i] % 2;
-            // do Xor 
-            for(int i=0;i<xor_map.size();i++){
-                int xor_vn = xor_map[i];
-                B_CodeWord[xor_vn] = B_CodeWord[xor_vn] ^ Extra_CodeWord[i];
-            }
-            for(int i=0;i<PayLoad_H.n;i++){ // Count LLR
-                // BPSK -> {0->1}、{1->-1}
-                // double receiver_codeword=(-2*transmit_codeword[i]+1)/sigma + gasdev(); // power up
-                double receive_value=(double)(-2*B_CodeWord[i]+1) + 1*gasdev(); // fixed power
-                B_LLR[i]=2*receive_value/pow(1,2); 
-            }
-            vector<double> B_LLR_copy = B_LLR; // copy for later use
-            for(int i=0;i<RV1_punc_nums;i++){
-                int punc_vn = RV1_punc_map[i]; //  RV1
-                B_LLR[punc_vn] = 0; // RV1
-            }
-            // assign LLR to correct position
-            for(int i=0;i<xor_map.size();i++){
-                int base_pos = PayLoad_H.n + Extra_H.n + i; 
-                B_LLR[base_pos] = B_LLR_copy[xor_map[i]]; // RV1
-                B_LLR[xor_map[i]] = 0; // combine H
-            }
-            bool decode_flag_B = BP_for_CombineH(PayLoad_H,SNR,code_rate,iteration_limit,iteration_open,B_LLR,Extra_H,H);
-            total_bits += (PayLoad_H.n-RV1_punc_nums);
-
+            bool decode_flag_B = BP_for_CombineH(H,PayLoad_H,Extra_H,iteration_limit,iteration_open,B_LLR,A_CodeWord,B_CodeWord);
+            total_bits += RV1_punc_nums;
             if(decode_flag_B == true){
-                correct_bits += PayLoad_H.n - PayLoad_H.m; // info bits
-                for(int info_idx=Extra_H.n-RV1_punc_nums,RV1_idx=0;info_idx<Extra_H.n;info_idx++,RV1_idx++){
-                    int RV1_punc_vn = RV1_punc_map[RV1_idx]; // A RV1
-                    int Xor_vn = xor_map[info_idx];
-                    A_LLR[RV1_punc_vn] = B_CodeWord[Xor_vn]==0?B_LLR_copy[Xor_vn]:-1*B_LLR_copy[Xor_vn]; // A RV1
-                }
-                bool decode_flag_A = BP_for_Payload(PayLoad_H,SNR,code_rate,iteration_limit,A_LLR);
-                if(decode_flag_A==true){
-                    correct_bits += PayLoad_H.n - PayLoad_H.m; // info bits                    
-                }
+                correct_bits += PayLoad_H.n - PayLoad_H.m + Extra_H.n - Extra_H.m; // payload info bits + extra info bits
             }
         }
         double throughput = (correct_bits/total_bits);
@@ -187,18 +155,8 @@ int main(int argc,char* argv[]){
     }
 }
 
-vector<double> ProcessCodeWord_ReturnLLR(vector<vector<bool>>& G,struct parity_check H,bool Encode_Flag,double sigma,vector<int>& CodeWord){
+ vector<double> LLR_Process(const struct parity_check H,const vector<int>& CodeWord,double sigma){
     vector<double> LLR(H.n,0); 
-    if(Encode_Flag){ // 處理 Payload CodeWord 是zero 還是Encode
-        vector<bool> info_bits((G.size()));
-        for(int i=0;i<G.size();i++){
-            info_bits[i] = random_generation()>0.5?1:0;
-        }
-        CodeWord = Vector_Dot_Matrix_Int(info_bits,G);
-        for(int i=0;i<CodeWord.size();i++){
-            CodeWord[i] = CodeWord[i]%2;
-        }
-    }
     for(int i=0;i<H.n;i++){ // Count LLR
         // BPSK -> {0->1}、{1->-1}
         // double receiver_codeword=(-2*transmit_codeword[i]+1)/sigma + gasdev(); // power up
@@ -207,6 +165,23 @@ vector<double> ProcessCodeWord_ReturnLLR(vector<vector<bool>>& G,struct parity_c
     }
     return LLR;
 }
+
+void Encode_Process(const vector<vector<bool>>& G,const struct parity_check H,bool Encode_Flag,vector<int>& CodeWord){
+    if(Encode_Flag){ // 處理 Payload CodeWord 是zero 還是Encode
+        vector<bool> info_bits(G.size());
+        for(int i=0;i<G.size();i++){
+            info_bits[i] = random_generation()>0.5?1:0;
+        }
+        CodeWord = Vector_Dot_Matrix_Int(info_bits,G);
+        for(int i=0;i<CodeWord.size();i++){
+            CodeWord[i] = CodeWord[i]%2;
+        }
+    }else{
+        CodeWord.assign(H.n, 0);
+    }
+}
+
+
 
 
 void Read_File_H(struct parity_check *H,string& file_name_in){
