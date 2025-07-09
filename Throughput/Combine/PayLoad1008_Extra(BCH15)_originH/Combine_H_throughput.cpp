@@ -148,6 +148,7 @@ int main(int argc,char* argv[]){
                 correct_bits += PayLoad_H.n - PayLoad_H.m + Extra_H.n - Extra_H.m; // payload info bits + extra info bits
             }
         }
+        cout << "correct_bits : " << correct_bits << " | total_bits : " << total_bits  << "\n";
         double throughput = (correct_bits/total_bits);
         outfile << SNR << ", " << throughput << "\n";
         cout << "SNR : " << SNR << " | " << "Throughput : " << throughput << "% |\n ";

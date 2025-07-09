@@ -98,12 +98,12 @@ bool BP_for_Payload(struct parity_check H, int iteration_limit,const vector<doub
     for(int i=0;i<H.m;i++) free(VN_2_CN_LLR[i]);
     free(VN_2_CN_LLR);
     free(Guess_CodeWord);
-    for(int i=0;i<H.n;i++){
-        if(CodeWord[i]!=Guess_CodeWord[i]){
-           error_syndrome = true;
-           break; 
-        }
-    }
+    // for(int i=0;i<H.n;i++){
+    //     if(CodeWord[i]!=Guess_CodeWord[i]){
+    //        error_syndrome = true;
+    //        break; 
+    //     }
+    // }
     return error_syndrome==true?false:true;
 }
 
@@ -224,18 +224,18 @@ bool BP_for_CombineH(const struct parity_check H, const struct parity_check PayL
     free(CN_2_VN_LLR);
     for(int i=0;i<H.m;i++) free(VN_2_CN_LLR[i]);
     free(VN_2_CN_LLR);
-    for(int vn=0;vn<PayLoad_H.n;vn++){
-        if(Payload_Guess_CodeWord[vn]!=Payload_CodeWord[vn]){
-            payload_error_syndrome = true;
-            break;
-        }
-    }
-    for(int vn=0;vn<Extra_H.n;vn++){
-        if(Extra_Guess_CodeWord[vn]!=Extra_CodeWord[vn]){
-            extra_error_syndrome = true;
-            break;
-        }
-    }
+    // for(int vn=0;vn<PayLoad_H.n;vn++){
+    //     if(Payload_Guess_CodeWord[vn]!=Payload_CodeWord[vn]){
+    //         payload_error_syndrome = true;
+    //         break;
+    //     }
+    // }
+    // for(int vn=0;vn<Extra_H.n;vn++){
+    //     if(Extra_Guess_CodeWord[vn]!=Extra_CodeWord[vn]){
+    //         extra_error_syndrome = true;
+    //         break;
+    //     }
+    // }
     return (payload_error_syndrome==true && extra_error_syndrome==true)?false:true;
 }
 
