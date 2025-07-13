@@ -137,8 +137,7 @@ bool BP_for_Payload(struct parity_check H, double SNR, int iteration_limit,const
 }
 
 
-bool BP_for_CombineH(struct parity_check PayLoad_H, double SNR, int iteration_limit, int iteration_open,const vector<double> receiver_LLR,
-                     struct parity_check Extra_H,struct parity_check H){
+bool BP_for_CombineH(struct parity_check H,struct parity_check PayLoad_H,struct parity_check Extra_H, int iteration_limit, int iteration_open,const vector<double> receiver_LLR){
 
     double ** CN_2_VN_LLR = (double**)malloc(sizeof(double*)*H.n);
     for(int i=0;i<H.n;i++) CN_2_VN_LLR[i]=(double*)calloc(H.max_col_arr[i],sizeof(double));

@@ -174,7 +174,7 @@ int main(int argc,char* argv[]){
                 B_LLR[i] = B_LLR[Payload_punc_pos];
                 B_LLR[Payload_punc_pos] = 0;
             }
-            bool decode_flag_B = BP_for_Payload(H,SNR,iteration_limit,B_LLR);
+            bool decode_flag_B = BP_for_CombineH(H,PayLoad_H,Extra_H,iteration_limit,iteration_open,B_LLR);
             total_bits += (Superposition_origin.size()+Superpostion_Payload_Extra_NewStructure.size()); // total bits
             if(decode_flag_B==true){
                 correct_bits += PayLoad_H.n - PayLoad_H.m + Extra_H.n - Extra_H.m; // info bits
