@@ -9,7 +9,6 @@ H1_file = 'C:\Users\USER\Desktop\LDPC\PCM\PEGReg504x1008.txt'; % payload data
 H2_file = 'C:\Users\USER\Desktop\LDPC\PCM\BCH_15_7.txt'; % extra data
 H_combine_file = 'PCM_P1008_EBCH15_EnhanceStruc_kSR.txt';
 puncture_position_bits_outfile = "Table_Superposition_Extra_Payload.csv"; % 對應payload 、 extra puncture位置(原本的方法)
-RV1_punc_file = "RV1_puncvn_pos.txt";
 New_puncture_position_bits_outfile = "ExtraVNs_NewStrcuture.csv";
 % TransmitExtra_New_puncture_position_bits_outfile = "Transmit_ExtraVNs_NewStrcuture_50percent.csv";
 H1 = readHFromFileByLine(H1_file);
@@ -19,15 +18,13 @@ H2 = readHFromFileByLine(H2_file);
 Non_select_VNs = 1:H1_c;
 %% find Payload Punc bits
 Already_punc = [];
-RV1_punc_num = 7;
-Payload_punc_bits_num = H2_c * 2 + RV1_punc_num; % 總共 punc bits 為 Extra(部分Superposition、Extra傳送) + New_Structure2
+Payload_punc_bits_num = H2_c * 2 ; % 總共 punc bits 為 Extra(部分Superposition、Extra傳送) + New_Structure2
 punc_pos_bits = Rate_Compatible_Punctured_With_Short_Block_Lengths(H1,Payload_punc_bits_num,Already_punc); % start idx = 1
 Non_select_VNs = setdiff(Non_select_VNs,punc_pos_bits);
 punc_pos_bits = setdiff(punc_pos_bits,Already_punc);
 % 把找到的punc bits 分成 Payload+Extra(Superposition)、 New_Struct(Partial_unTransmit_VNs)
-RV1_punc_pos = punc_pos_bits(1:RV1_punc_num);
-punc_pos_bits_origin      =  punc_pos_bits(RV1_punc_num+1:RV1_punc_num+H2_c); % Superposition
-punc_pos_bits_New_Struct2 =  punc_pos_bits(RV1_punc_num+H2_c+1:end); % 被 punc
+punc_pos_bits_origin      =  punc_pos_bits(1:H2_c); % Superposition
+punc_pos_bits_New_Struct2 =  punc_pos_bits(H2_c+1:end); % 被 punc
 
 %% 找跟 non transmit Extra 連接的payload bits(不需要被punc) 但不能跟punc_pos_bits_New_Struct2相鄰
 punc_pos_bits_New_Struct1 = []; % 在 New Structure 中 跟Extra 做第一次疊加的 VNs
@@ -112,13 +109,6 @@ T = table([1:H2_c].',punc_pos_bits_New_Struct1.',punc_pos_bits_New_Struct2.','Va
 writetable(T, New_puncture_position_bits_outfile);  % 輸出 csv
 
 
-% write payload data with puncture bits position 
-fileID = fopen(RV1_punc_file, 'w');
-for pos=RV1_punc_pos
-    fprintf(fileID, '%d ', pos);
-end
-fprintf(fileID, '\n');
-fclose(fileID);
 
 %%
 % 範例二維矩陣（只有0與1）
