@@ -122,6 +122,7 @@ int main(int argc,char* argv[]){
             // decode A version with RV0
             boost::dynamic_bitset<> A_CodeWord(PayLoad_H.n);
             boost::dynamic_bitset<> B_CodeWord(Extra_H.n);
+            boost::dynamic_bitset<> Xor_CodeWord(PayLoad_H.n);
             boost::dynamic_bitset<> A_info_bits(PayLoad_Flag?Payload_Origin_G.size():(PayLoad_H.n-PayLoad_H.m));
             boost::dynamic_bitset<> B_info_bits(Extra_Flag?Extra_Origin_G.size():(Extra_H.n-Extra_H.m));
             vector<double> A_LLR(PayLoad_H.n,0);
@@ -139,7 +140,7 @@ int main(int argc,char* argv[]){
                 int payload_vn_punc  = table.payload_vn_punc;
                 A_LLR[payload_vn_punc] = 0;
             }
-            bool decode_flag_A = BP_for_Payload(PayLoad_H,SNR,iteration_limit,A_LLR);
+            bool decode_flag_A = BP_for_Payload(PayLoad_H,SNR,iteration_limit,A_LLR,A_CodeWord);
             total_bits += (PayLoad_H.n-Superposition_origin.size()-Superpostion_Payload_Extra_NewStructure.size()); // total bits
             if(decode_flag_A==true){
                 correct_bits += PayLoad_H.n - PayLoad_H.m; // info bits
@@ -149,16 +150,16 @@ int main(int argc,char* argv[]){
             for(auto& table:Superposition_origin){
                 int extra_pos = table.first;
                 int payload_pos = table.second;
-                A_CodeWord[payload_pos] = A_CodeWord[payload_pos] ^ B_CodeWord[extra_pos];
+                Xor_CodeWord[payload_pos] = A_CodeWord[payload_pos] ^ B_CodeWord[extra_pos];
             }
             // Payload xor Extra with NewStructure (Extra ^ P1 ^ P2)
             for(auto& table:Superpostion_Payload_Extra_NewStructure){
                 int extra_vn  = table.extra_vn;
                 int payload_vn_nonpunc  = table.payload_vn_nonpunc;
                 int payload_vn_punc  = table.payload_vn_punc;
-                A_CodeWord[payload_vn_punc] = A_CodeWord[payload_vn_punc] ^ A_CodeWord[payload_vn_nonpunc] ^ B_CodeWord[extra_vn];
+                Xor_CodeWord[payload_vn_punc] = A_CodeWord[payload_vn_punc] ^ A_CodeWord[payload_vn_nonpunc] ^ B_CodeWord[extra_vn];
             }
-            Count_LLR(PayLoad_H,A_CodeWord,sigma,B_LLR);
+            Count_LLR(PayLoad_H,Xor_CodeWord,sigma,B_LLR);
             for(int i=PayLoad_H.n;i<(PayLoad_H.n+Extra_H.n);i++) B_LLR[i] = 0;
             // 部分Extra 傳送過來的資訊要放上去
             auto pair_iter = Superposition_origin.begin();
@@ -174,10 +175,14 @@ int main(int argc,char* argv[]){
                 B_LLR[i] = B_LLR[Payload_punc_pos];
                 B_LLR[Payload_punc_pos] = 0;
             }
-            bool decode_flag_B = BP_for_CombineH(H,PayLoad_H,Extra_H,iteration_limit,iteration_open,B_LLR);
+            bool decode_payload_flag = false,decode_extra_flag = false;
+            BP_for_CombineH(H,PayLoad_H,Extra_H,iteration_limit,iteration_open,B_LLR,A_CodeWord,decode_payload_flag,B_CodeWord,decode_extra_flag);
             total_bits += (Superposition_origin.size()+Superpostion_Payload_Extra_NewStructure.size()); // total bits
-            if(decode_flag_B==true){
-                correct_bits += PayLoad_H.n - PayLoad_H.m + Extra_H.n - Extra_H.m; // info bits
+            if(decode_payload_flag==true){
+                correct_bits += PayLoad_H.n - PayLoad_H.m; // info bits
+            }
+            if(decode_extra_flag==true){
+                correct_bits += Extra_H.n - Extra_H.m;
             }
         }
         double throughput = (correct_bits/total_bits);

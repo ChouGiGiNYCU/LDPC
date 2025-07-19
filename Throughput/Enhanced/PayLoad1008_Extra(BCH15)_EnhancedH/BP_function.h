@@ -41,7 +41,7 @@ void Count_LLR(struct parity_check H,const boost::dynamic_bitset<>& CodeWord,dou
     }
 }
 
-bool BP_for_Payload(struct parity_check H, double SNR, int iteration_limit,const vector<double> receiver_LLR){
+bool BP_for_Payload(struct parity_check H, double SNR, int iteration_limit,const vector<double> receiver_LLR,const boost::dynamic_bitset<>& CodeWord){
 
     double ** CN_2_VN_LLR = (double**)malloc(sizeof(double*)*H.n);
     for(int i=0;i<H.n;i++) CN_2_VN_LLR[i]=(double*)calloc(H.max_col_arr[i],sizeof(double));
@@ -126,26 +126,31 @@ bool BP_for_Payload(struct parity_check H, double SNR, int iteration_limit,const
         }
         it++;
     }
-
+    for(int i=0;i<H.n;i++){
+        if(Guess_CodeWord[i]!=CodeWord[i]){
+            error_syndrome = true;
+            break;
+        }
+    }
     for(int i=0;i<H.n;i++) free(CN_2_VN_LLR[i]);
     free(CN_2_VN_LLR);
     for(int i=0;i<H.m;i++) free(VN_2_CN_LLR[i]);
     free(VN_2_CN_LLR);
     free(Guess_CodeWord);
-
+    
     return error_syndrome==true?false:true;
 }
 
 
-bool BP_for_CombineH(struct parity_check H,struct parity_check PayLoad_H,struct parity_check Extra_H, int iteration_limit, int iteration_open,const vector<double> receiver_LLR){
+void BP_for_CombineH(struct parity_check H,struct parity_check PayLoad_H,struct parity_check Extra_H, int iteration_limit, int iteration_open,const vector<double> receiver_LLR,const boost::dynamic_bitset<>& Payload_CodeWord,bool& decode_payload_flag,const boost::dynamic_bitset<>& Extra_CodeWord,bool& decode_extra_flag){
 
     double ** CN_2_VN_LLR = (double**)malloc(sizeof(double*)*H.n);
     for(int i=0;i<H.n;i++) CN_2_VN_LLR[i]=(double*)calloc(H.max_col_arr[i],sizeof(double));
     double ** VN_2_CN_LLR = (double**)malloc(sizeof(double*)*H.m);
     for(int i=0;i<H.m;i++) VN_2_CN_LLR[i]=(double*)calloc(H.max_row_arr[i],sizeof(double));
     double *totalLLR = (double*)malloc(H.n*sizeof(double));
-    double *Payload_Guess_CodeWord = (double*)malloc(sizeof(double)*PayLoad_H.n);
-    double *Extra_Guess_CodeWord = (double*)malloc(sizeof(double)*Extra_H.n);
+    int *Payload_Guess_CodeWord = (int*)malloc(sizeof(int)*PayLoad_H.n);
+    int *Extra_Guess_CodeWord = (int*)malloc(sizeof(int)*Extra_H.n);
     
     bool payload_correct_flag = false; // 如果 payload syndrome 是全零，代表 codeword 是個合法的，就開通往extra 傳送 message
     int it=0;
@@ -248,13 +253,26 @@ bool BP_for_CombineH(struct parity_check H,struct parity_check PayLoad_H,struct 
         if(payload_error_syndrome==false) payload_correct_flag = true;
         it++;
     }
+    for(int vn=0;vn<PayLoad_H.n;vn++){
+        if(Payload_CodeWord[vn]!=Payload_Guess_CodeWord[vn]){
+            decode_payload_flag = false;
+            break;
+        }
+    }
+    for(int vn=0;vn<Extra_H.n;vn++){
+        if(Extra_CodeWord[vn]!=Extra_Guess_CodeWord[vn]){
+            decode_extra_flag = false;
+            break;
+        }
+    }
 
     for(int i=0;i<H.n;i++) free(CN_2_VN_LLR[i]);
     free(CN_2_VN_LLR);
     for(int i=0;i<H.m;i++) free(VN_2_CN_LLR[i]);
     free(VN_2_CN_LLR);
     
-    return (payload_error_syndrome==true && extra_error_syndrome==true)?false:true;
+    return;
 }
+
 
 #endif
