@@ -104,6 +104,7 @@ int main(int argc,char* argv[]){
             vector<int> A_CodeWord;
             vector<int> B_CodeWord;
             Encode_Process(PayLoad_G,PayLoad_H,PayLoad_Flag,A_CodeWord);
+            vector<int> Xor_CodeWord = A_CodeWord;
             if(A_CodeWord.size()!=PayLoad_H.n){
                 cout << "Error -- A_CodeWord size is not equal to Payload_H.n\n";
                 exit(1);
@@ -116,10 +117,11 @@ int main(int argc,char* argv[]){
             /*RV1 position do LLR combine*/
             for(int i=0;i<RV1_punc_nums;i++){
                 int pos = RV1_punc_map[i];
-                A_CodeWord[pos] = A_CodeWord[pos] ^ B_CodeWord[i]; 
+                Xor_CodeWord[pos] = A_CodeWord[pos] ^ B_CodeWord[i]; 
             }
-
-            vector<double> A_LLR = LLR_Process(PayLoad_H,A_CodeWord,sigma);
+            // 傳送出去的 LLR用 Xor過後的，接下來在做puncture
+            vector<double> A_LLR = LLR_Process(PayLoad_H,Xor_CodeWord,sigma);
+            // RV2要傳送的LLR
             vector<double> B_LLR(H.n,0);
             for(int i=0;i<A_LLR.size();i++) B_LLR[i] = A_LLR[i];
             
@@ -142,10 +144,14 @@ int main(int argc,char* argv[]){
                 B_LLR[super_pos] = B_LLR[origin_pos];  
                 B_LLR[origin_pos] = 0; //  Superposition position
             }
-            bool decode_flag_B = BP_for_CombineH(H,PayLoad_H,Extra_H,iteration_limit,iteration_open,B_LLR,A_CodeWord,B_CodeWord);
+            bool decode_Payload_flag = true, decode_Extra_flag = true;
+            BP_for_CombineH(H,PayLoad_H,Extra_H,iteration_limit,iteration_open,B_LLR,A_CodeWord,decode_Payload_flag,B_CodeWord,decode_Extra_flag);
             total_bits += RV1_punc_nums;
-            if(decode_flag_B == true){
-                correct_bits += PayLoad_H.n - PayLoad_H.m + Extra_H.n - Extra_H.m; // payload info bits + extra info bits
+            if(decode_Payload_flag == true){
+                correct_bits += PayLoad_H.n - PayLoad_H.m; // payload info bits + extra info bits
+            }
+            if(decode_Extra_flag == true){
+                correct_bits += Extra_H.n - Extra_H.m;
             }
         }
         cout << "correct_bits : " << correct_bits << " | total_bits : " << total_bits  << "\n";

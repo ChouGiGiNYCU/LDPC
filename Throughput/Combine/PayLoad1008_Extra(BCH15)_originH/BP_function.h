@@ -98,17 +98,17 @@ bool BP_for_Payload(struct parity_check H, int iteration_limit,const vector<doub
     for(int i=0;i<H.m;i++) free(VN_2_CN_LLR[i]);
     free(VN_2_CN_LLR);
     free(Guess_CodeWord);
-    // for(int i=0;i<H.n;i++){
-    //     if(CodeWord[i]!=Guess_CodeWord[i]){
-    //        error_syndrome = true;
-    //        break; 
-    //     }
-    // }
+    for(int i=0;i<H.n;i++){
+        if(CodeWord[i]!=Guess_CodeWord[i]){
+           error_syndrome = true;
+           break; 
+        }
+    }
     return error_syndrome==true?false:true;
 }
 
-bool BP_for_CombineH(const struct parity_check H, const struct parity_check PayLoad_H, const struct parity_check Extra_H, int iteration_limit,int iteration_open,
-                     vector<double> receiver_LLR,const vector<int>& Payload_CodeWord,const vector<int>& Extra_CodeWord){
+void BP_for_CombineH(const struct parity_check H, const struct parity_check PayLoad_H, const struct parity_check Extra_H, int iteration_limit,int iteration_open,
+                     vector<double> receiver_LLR,const vector<int>& Payload_CodeWord,bool& decode_Payload_flag,const vector<int>& Extra_CodeWord,bool& decode_Extra_flag){
 
     double ** CN_2_VN_LLR = (double**)malloc(sizeof(double*)*H.n);
     for(int i=0;i<H.n;i++) CN_2_VN_LLR[i]=(double*)calloc(H.max_col_arr[i],sizeof(double));
@@ -224,19 +224,19 @@ bool BP_for_CombineH(const struct parity_check H, const struct parity_check PayL
     free(CN_2_VN_LLR);
     for(int i=0;i<H.m;i++) free(VN_2_CN_LLR[i]);
     free(VN_2_CN_LLR);
-    // for(int vn=0;vn<PayLoad_H.n;vn++){
-    //     if(Payload_Guess_CodeWord[vn]!=Payload_CodeWord[vn]){
-    //         payload_error_syndrome = true;
-    //         break;
-    //     }
-    // }
-    // for(int vn=0;vn<Extra_H.n;vn++){
-    //     if(Extra_Guess_CodeWord[vn]!=Extra_CodeWord[vn]){
-    //         extra_error_syndrome = true;
-    //         break;
-    //     }
-    // }
-    return (payload_error_syndrome==true && extra_error_syndrome==true)?false:true;
+    for(int vn=0;vn<PayLoad_H.n;vn++){
+        if(Payload_Guess_CodeWord[vn]!=Payload_CodeWord[vn]){
+            decode_Payload_flag = false;
+            break;
+        }
+    }
+    for(int vn=0;vn<Extra_H.n;vn++){
+        if(Extra_Guess_CodeWord[vn]!=Extra_CodeWord[vn]){
+            extra_error_syndrome = false;
+            break;
+        }
+    }
+    return;
 }
 
 #endif
