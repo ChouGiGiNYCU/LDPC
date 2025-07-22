@@ -22,7 +22,7 @@ int main(int argc,char* argv[]){
     if(argc < 2){
         cout << "** Error ---- No file in \n" ; 
     }
-    int total_frame_count = 1e6;
+    int total_frame_count = 10000;
     string H_combine_file = argv[1];
     string Payload_PCM_file = argv[2];
     string Extra_PCM_file = argv[3];
@@ -186,6 +186,7 @@ int main(int argc,char* argv[]){
             }
         }
         double throughput = (correct_bits/total_bits);
+        cout << "correct_bits : " << correct_bits << " | " << total_bits << "\n";
         outfile << SNR << ", " << throughput << "\n";
         cout << "SNR : " << SNR << " | " << "Throughput : " << throughput << "% |\n ";
         SNR += SNR_ratio;

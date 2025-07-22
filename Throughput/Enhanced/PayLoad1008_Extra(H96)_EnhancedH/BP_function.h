@@ -1,7 +1,10 @@
 #ifndef BP_FUNCTION
 #define BP_FUNCTION
+#include <vector>
+#include <boost/dynamic_bitset.hpp>
 #include "UseFuction.h"
-#include "random_number_generator.h"
+
+using namespace std;
 
 double phi(double x){
     double yy = tanh(x / 2);
@@ -10,7 +13,35 @@ double phi(double x){
     return -log(yy) + 1e-14;
 }
 
-bool BP_for_Payload(struct parity_check H, double SNR, int iteration_limit,const vector<double> receiver_LLR,const vector<int>& CodeWord){
+void Process_info_bits(boost::dynamic_bitset<>& info_bits,bool Encode_Flag){
+    if(Encode_Flag){
+        for(int i=0;i<info_bits.size();i++){
+            info_bits[i] = random_generation()>0.5?1:0;
+        }
+    }else{
+        info_bits.reset();
+    }
+}
+
+void Encode_Process(vector<boost::dynamic_bitset<>>& Transpose_G,bool Encode_Flag,boost::dynamic_bitset<>& CodeWord,const boost::dynamic_bitset<>& info_bits){
+    if(Encode_Flag){ // 處理 Payload CodeWord 是zero 還是Encode
+        GF2_Mat_Vec_Dot(info_bits,Transpose_G,CodeWord);
+    }else{
+        CodeWord.reset();
+    }
+    return;
+}
+
+void Count_LLR(struct parity_check H,const boost::dynamic_bitset<>& CodeWord,double sigma,vector<double>& LLR){
+    for(int i=0;i<H.n;i++){ // Count LLR
+        // BPSK -> {0->1}、{1->-1}
+        // double receiver_codeword=(-2*transmit_codeword[i]+1)/sigma + gasdev(); // power up
+        double receive_value=(double)(-2*CodeWord[i]+1) + sigma*gasdev(); // fixed power
+        LLR[i]=2*receive_value/pow(sigma,2); 
+    }
+}
+
+bool BP_for_Payload(struct parity_check H, double SNR, int iteration_limit,const vector<double> receiver_LLR,const boost::dynamic_bitset<>& CodeWord){
 
     double ** CN_2_VN_LLR = (double**)malloc(sizeof(double*)*H.n);
     for(int i=0;i<H.n;i++) CN_2_VN_LLR[i]=(double*)calloc(H.max_col_arr[i],sizeof(double));
@@ -18,12 +49,9 @@ bool BP_for_Payload(struct parity_check H, double SNR, int iteration_limit,const
     for(int i=0;i<H.m;i++) VN_2_CN_LLR[i]=(double*)calloc(H.max_row_arr[i],sizeof(double));
     double *Guess_CodeWord = (double*)malloc(sizeof(double)*H.n);
     double *totalLLR = (double*)malloc(H.n*sizeof(double));
-    vector<int> payload_Encode(H.n,0);
-    
-    
+    vector<int> payload_Encode(H.n,0); 
     int it=0;
     bool error_syndrome = true;
-    bool payload_bit_error_flag=false;
     for(int i=0;i<H.n;i++) totalLLR[i]=0;
     for(int i=0;i<H.n;i++) for(int j=0;j<H.max_col_arr[i];j++) CN_2_VN_LLR[i][j] = 0;
     for(int i=0;i<H.m;i++) for(int j=0;j<H.max_row_arr[i];j++) VN_2_CN_LLR[i][j] = 0;
@@ -98,36 +126,32 @@ bool BP_for_Payload(struct parity_check H, double SNR, int iteration_limit,const
         }
         it++;
     }
-
+    for(int i=0;i<H.n;i++){
+        if(Guess_CodeWord[i]!=CodeWord[i]){
+            error_syndrome = true;
+            break;
+        }
+    }
     for(int i=0;i<H.n;i++) free(CN_2_VN_LLR[i]);
     free(CN_2_VN_LLR);
     for(int i=0;i<H.m;i++) free(VN_2_CN_LLR[i]);
     free(VN_2_CN_LLR);
     free(Guess_CodeWord);
-    for(int i=0;i<H.n;i++){
-        if(Guess_CodeWord[i]!=CodeWord[i]){
-           error_syndrome = true;
-           break; 
-        } 
-    }
+    
     return error_syndrome==true?false:true;
 }
 
 
-bool BP_for_CombineH(vector<vector<bool>>& Payload_G,struct parity_check PayLoad_H, double SNR, double code_rate, int iteration_limit, int iteration_open,const vector<double> receiver_LLR,
-                     vector<vector<bool>>& Extra_G,struct parity_check Extra_H,struct parity_check H){
+void BP_for_CombineH(struct parity_check H,struct parity_check PayLoad_H,struct parity_check Extra_H, int iteration_limit, int iteration_open,const vector<double> receiver_LLR,const boost::dynamic_bitset<>& Payload_CodeWord,bool& decode_payload_flag,const boost::dynamic_bitset<>& Extra_CodeWord,bool& decode_extra_flag){
 
     double ** CN_2_VN_LLR = (double**)malloc(sizeof(double*)*H.n);
     for(int i=0;i<H.n;i++) CN_2_VN_LLR[i]=(double*)calloc(H.max_col_arr[i],sizeof(double));
     double ** VN_2_CN_LLR = (double**)malloc(sizeof(double*)*H.m);
     for(int i=0;i<H.m;i++) VN_2_CN_LLR[i]=(double*)calloc(H.max_row_arr[i],sizeof(double));
     double *totalLLR = (double*)malloc(H.n*sizeof(double));
-    double *Payload_Guess_CodeWord = (double*)malloc(sizeof(double)*PayLoad_H.n);
-    double *Extra_Guess_CodeWord = (double*)malloc(sizeof(double)*Extra_H.n);
-    // vector<int> payload_Encode(Payload_G[0].size(),0);
-    // vector<int> extra_Encode(Extra_G[0].size(),0);
-    bool payload_bit_error_flag=false;
-    bool extra_bit_error_flag=false;
+    int *Payload_Guess_CodeWord = (int*)malloc(sizeof(int)*PayLoad_H.n);
+    int *Extra_Guess_CodeWord = (int*)malloc(sizeof(int)*Extra_H.n);
+    
     bool payload_correct_flag = false; // 如果 payload syndrome 是全零，代表 codeword 是個合法的，就開通往extra 傳送 message
     int it=0;
     bool payload_error_syndrome = true,extra_error_syndrome=true;
@@ -136,7 +160,7 @@ bool BP_for_CombineH(vector<vector<bool>>& Payload_G,struct parity_check PayLoad
     for(int i=0;i<H.n;i++) for(int j=0;j<H.max_col_arr[i];j++) CN_2_VN_LLR[i][j] = 0;
     for(int i=0;i<H.m;i++) for(int j=0;j<H.max_row_arr[i];j++) VN_2_CN_LLR[i][j] = 0;
     
-    while(it<iteration_limit && payload_error_syndrome && extra_error_syndrome){
+    while(it<iteration_limit && (payload_error_syndrome || extra_error_syndrome)){
         /* ------- CN update ------- */
         for(int VN=0;VN<H.n;VN++){
             if(VN>=PayLoad_H.n && VN<(Extra_H.n+PayLoad_H.n) && (it<iteration_open && payload_correct_flag==false)) continue;
@@ -229,13 +253,26 @@ bool BP_for_CombineH(vector<vector<bool>>& Payload_G,struct parity_check PayLoad
         if(payload_error_syndrome==false) payload_correct_flag = true;
         it++;
     }
+    for(int vn=0;vn<PayLoad_H.n;vn++){
+        if(Payload_CodeWord[vn]!=Payload_Guess_CodeWord[vn]){
+            decode_payload_flag = false;
+            break;
+        }
+    }
+    for(int vn=0;vn<Extra_H.n;vn++){
+        if(Extra_CodeWord[vn]!=Extra_Guess_CodeWord[vn]){
+            decode_extra_flag = false;
+            break;
+        }
+    }
 
     for(int i=0;i<H.n;i++) free(CN_2_VN_LLR[i]);
     free(CN_2_VN_LLR);
     for(int i=0;i<H.m;i++) free(VN_2_CN_LLR[i]);
     free(VN_2_CN_LLR);
     
-    return (payload_error_syndrome==true && extra_error_syndrome==true)?false:true;
+    return;
 }
+
 
 #endif
