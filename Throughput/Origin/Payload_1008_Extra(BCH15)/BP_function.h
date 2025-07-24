@@ -10,7 +10,7 @@ double phi(double x){
     return -log(yy) + 1e-14;
 }
 
-bool BP_for_Payload(struct parity_check H, double SNR, int iteration_limit,const vector<double> receiver_LLR,const vector<int>& CodeWord){
+bool BP_for_Payload(struct parity_check H, int iteration_limit,const vector<double> receiver_LLR,const vector<int>& CodeWord){
 
     double ** CN_2_VN_LLR = (double**)malloc(sizeof(double*)*H.n);
     for(int i=0;i<H.n;i++) CN_2_VN_LLR[i]=(double*)calloc(H.max_col_arr[i],sizeof(double));

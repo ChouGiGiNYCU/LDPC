@@ -12,10 +12,10 @@ payload_PCM = /mnt/c/Users/USER/Desktop/LDPC/PCM/PEGReg504x1008.txt
 RV1_punc_file = RV1_punc_pos_file.txt
 RV1_punc_nums = 15
 ############# G setting ###########
-payload_Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/PEGReg504x1008_G.txt
-# payload_Generater_matrix_file = None
+# payload_Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/PEGReg504x1008_G.txt
+payload_Generater_matrix_file = None
 ###################################
-out_file = throughput.csv
+out_file = throughput1.csv
 
 $(TARGET): $(SRCS)
 	$(CC) $(CFLAGS)  $(SRCS) -o  $(TARGET) -lpthread
