@@ -9,7 +9,7 @@
 #include "UseFuction.h"
 
 
-#define frame_error_lowwer_bound 400
+#define frame_error_lowwer_bound 200
 double phi(double x){
     double yy = tanh(x / 2);
     if (fabs(yy) < 1e-14) 

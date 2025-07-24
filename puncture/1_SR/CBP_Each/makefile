@@ -4,7 +4,7 @@ TARGET = CBP
 SRCS = CBP.cpp
 ##########################
 SNR_min = 1
-SNR_max = 3
+SNR_max = 2.5
 SNR_Ratio = 0.25
 Iteration_Limit = 200
 ##########################
@@ -18,8 +18,10 @@ PCM_file_4 = /mnt/c/Users/USER/Desktop/LDPC/PCM/BCH_15_7.txt
 PCM_outfile_4 = CBP_BCH15x7_it_$(Iteration_Limit).csv
 PCM_file_5 = /mnt/c/Users/USER/Desktop/LDPC/PCM/BCH_63_45.txt
 PCM_outfile_5 = CBP_BCH63x45_it_$(Iteration_Limit).csv
-
-
+PCM_file_6 = /mnt/c/Users/USER/Desktop/LDPC/PCM/Polar_16_fix.txt
+PCM_outfile_6 = CBP_Polar16_it_$(Iteration_Limit).csv
+PCM_file_7 = /mnt/c/Users/USER/Desktop/LDPC/PCM/Polar_64.txt
+PCM_outfile_7 = CBP_Polar64_it_$(Iteration_Limit).csv
 ############# G setting ###########
 GM_file_1 = PEGReg504x1008_G.txt  # 
 GM_Encdoe_Flag_1 = 0
@@ -35,6 +37,12 @@ GM_Encdoe_Flag_4 = 0
 
 GM_file_5 = None
 GM_Encdoe_Flag_5 = 0
+
+GM_file_6 = None
+GM_Encdoe_Flag_6 = 0
+
+GM_file_7 = None
+GM_Encdoe_Flag_7 = 0
 ###################################
 
 
@@ -51,6 +59,10 @@ BP_BCH15: $(TARGET)
 	./$(TARGET) $(PCM_file_4)  $(PCM_outfile_4)  $(GM_file_4) $(GM_Encdoe_Flag_4) $(Iteration_Limit) $(SNR_min) $(SNR_max) $(SNR_Ratio)   
 BP_BCH63: $(TARGET)
 	./$(TARGET) $(PCM_file_5)  $(PCM_outfile_5)  $(GM_file_5) $(GM_Encdoe_Flag_5) $(Iteration_Limit) $(SNR_min) $(SNR_max) $(SNR_Ratio)   
+BP_Polar16: $(TARGET)
+	./$(TARGET) $(PCM_file_6)  $(PCM_outfile_6)  $(GM_file_6) $(GM_Encdoe_Flag_6) $(Iteration_Limit) $(SNR_min) $(SNR_max) $(SNR_Ratio)   
+BP_Polar64: $(TARGET)
+	./$(TARGET) $(PCM_file_7)  $(PCM_outfile_7)  $(GM_file_7) $(GM_Encdoe_Flag_7) $(Iteration_Limit) $(SNR_min) $(SNR_max) $(SNR_Ratio)   
 
 clean:
 	rm -f $(TARGET) 

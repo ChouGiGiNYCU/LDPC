@@ -2,21 +2,24 @@ CC = g++
 CFLAGS = -Wfatal-errors -std=c++11
 TARGET = CBP_decode_superposition
 SRCS = CBP_decode_superposition.cpp
+###################################
+SNR_min = 1
+SNR_max = 2.6
+SNR_Ratio = 0.2
+Iteration_Limit = 200
+###################################
 payload_parity_check_matrix = PEGReg504x1008.txt
-payload_out_csv_file = CBP_Sup_PEG504X1008_it_20.csv
+payload_out_csv_file = CBP_Sup_PEG504X1008_it_$(Iteration_Limit).csv
+
 extra_paity_check_matrix_file = H_10_5.txt
-extra_out_csv_file = CBP_Sup_H5x10_it_20.csv
+extra_out_csv_file = CBP_Sup_H5x10_it_$(Iteration_Limit).csv
 ############# G setting ###########
-payload_Generater_matrix_file = None  # 
-payload_Encdoe_Flag = 0
+payload_Generater_matrix_file = PEGReg504x1008_G.txt  # 
+payload_Encdoe_Flag = 1
 
 extra_Generater_matrix_file = H_10_5_G.txt
 extra_Encdoe_Flag = 1
 ###################################
-SNR_min = 0
-SNR_max = 10
-SNR_Ratio = 1
-Iteration_Limit = 20
 
 $(TARGET): $(SRCS)
 	$(CC) $(CFLAGS)  $(SRCS) -o  $(TARGET) -lpthread

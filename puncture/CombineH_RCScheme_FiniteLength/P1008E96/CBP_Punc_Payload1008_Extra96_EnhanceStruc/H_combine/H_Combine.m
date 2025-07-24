@@ -78,8 +78,7 @@ H_combine = [
                 zero3                          ,         H2        , zero5  , zero6          , zero6;
                 sup_payload_mat                ,     sup_extra_mat , I_sup  , zero7          , zero7;
                 punc_payload_mat_NewStructure1 , I_New_Strcture    , zero9  , I_New_Strcture , zero8;
-                punc_payload_mat_NewStructure2 , zero10            , zero9  , I_New_Strcture , I_New_Strcture;
-            
+                punc_payload_mat_NewStructure2 , zero10            , zero9  , I_New_Strcture , I_New_Strcture;            
             ];
 %% find Payload Punc bits
 Already_PuncVNs = (H1_c+H2_c+non_Transmit_Extra_VNs_num+1):(H1_c+H2_c+non_Transmit_Extra_VNs_num+H2_c);

@@ -4,14 +4,15 @@ TARGET = ML
 SRCS = ML.cpp
 ##########################
 SNR_min = 1
-SNR_max = 3
-SNR_Ratio = 0.5
+SNR_max = 2
+SNR_Ratio = 0.25
 # Iteration_Limit = 50
 ##########################
-PCM_file = /mnt/c/Users/USER/Desktop/LDPC/PCM/H_10_5.txt
-PCM_outfile = ML_H10x5.csv
+PCM_file = /mnt/c/Users/USER/Desktop/LDPC/PCM/BCH_15_7.txt
+# PCM_outfile = ML_H10x5.csv
 ############# G setting ###########
-GM_file = /mnt/c/Users/USER/Desktop/LDPC/GM/H_10_5_G.txt
+GM_file = /mnt/c/Users/USER/Desktop/LDPC/GM/BCH_15_7_G.txt
+PCM_outfile = ML_BCH15x7.csv
 ###################################
 
 
