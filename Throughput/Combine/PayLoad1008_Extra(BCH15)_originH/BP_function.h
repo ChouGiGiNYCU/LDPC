@@ -15,13 +15,11 @@ bool BP_for_Payload(struct parity_check H, int iteration_limit,const vector<doub
     for(int i=0;i<H.n;i++) CN_2_VN_LLR[i]=(double*)calloc(H.max_col_arr[i],sizeof(double));
     double ** VN_2_CN_LLR = (double**)malloc(sizeof(double*)*H.m);
     for(int i=0;i<H.m;i++) VN_2_CN_LLR[i]=(double*)calloc(H.max_row_arr[i],sizeof(double));
-    double *Guess_CodeWord = (double*)malloc(sizeof(double)*H.n);
+    int *Guess_CodeWord = (int*)malloc(sizeof(int)*H.n);
     double *totalLLR = (double*)malloc(H.n*sizeof(double));
     int it=0;
     bool error_syndrome = true;
     for(int i=0;i<H.n;i++) totalLLR[i]=0;
-    for(int i=0;i<H.n;i++) for(int j=0;j<H.max_col_arr[i];j++) CN_2_VN_LLR[i][j] = 0;
-    for(int i=0;i<H.m;i++) for(int j=0;j<H.max_row_arr[i];j++) VN_2_CN_LLR[i][j] = 0;
     
     while(it<iteration_limit && error_syndrome){
         /* ------- CN update ------- */
@@ -92,23 +90,24 @@ bool BP_for_Payload(struct parity_check H, int iteration_limit,const vector<doub
         }
         it++;
     }
-
-    for(int i=0;i<H.n;i++) free(CN_2_VN_LLR[i]);
-    free(CN_2_VN_LLR);
-    for(int i=0;i<H.m;i++) free(VN_2_CN_LLR[i]);
-    free(VN_2_CN_LLR);
-    free(Guess_CodeWord);
     for(int i=0;i<H.n;i++){
         if(CodeWord[i]!=Guess_CodeWord[i]){
            error_syndrome = true;
            break; 
         }
     }
+
+    for(int i=0;i<H.n;i++) free(CN_2_VN_LLR[i]);
+    free(CN_2_VN_LLR);
+    for(int i=0;i<H.m;i++) free(VN_2_CN_LLR[i]);
+    free(VN_2_CN_LLR);
+    free(Guess_CodeWord);
+
     return error_syndrome==true?false:true;
 }
 
-void BP_for_CombineH(const struct parity_check H, const struct parity_check PayLoad_H, const struct parity_check Extra_H, int iteration_limit,int iteration_open,
-                     vector<double> receiver_LLR,const vector<int>& Payload_CodeWord,bool& decode_Payload_flag,const vector<int>& Extra_CodeWord,bool& decode_Extra_flag){
+void BP_for_CombineH(const struct parity_check& H, const struct parity_check& PayLoad_H, const struct parity_check& Extra_H, const int& iteration_limit,const int& iteration_open,
+                     const vector<double>& receiver_LLR,const vector<int>& Payload_CodeWord,bool& decode_Payload_flag,const vector<int>& Extra_CodeWord,bool& decode_Extra_flag){
 
     double ** CN_2_VN_LLR = (double**)malloc(sizeof(double*)*H.n);
     for(int i=0;i<H.n;i++) CN_2_VN_LLR[i]=(double*)calloc(H.max_col_arr[i],sizeof(double));
@@ -119,14 +118,12 @@ void BP_for_CombineH(const struct parity_check H, const struct parity_check PayL
     int *Extra_Guess_CodeWord = (int*)malloc(sizeof(int)*Extra_H.n);
     
     bool payload_correct_flag = false; // 如果 payload syndrome 是全零，代表 codeword 是個合法的，就開通往extra 傳送 message
-    int it=0;
     bool payload_error_syndrome = true,extra_error_syndrome=true;
+    int it=0;
 
     for(int i=0;i<H.n;i++) totalLLR[i]=0;
-    for(int i=0;i<H.n;i++) for(int j=0;j<H.max_col_arr[i];j++) CN_2_VN_LLR[i][j] = 0;
-    for(int i=0;i<H.m;i++) for(int j=0;j<H.max_row_arr[i];j++) VN_2_CN_LLR[i][j] = 0;
     
-    while(it<iteration_limit && payload_error_syndrome && extra_error_syndrome){
+    while(it<iteration_limit && (payload_error_syndrome || extra_error_syndrome)){
         /* ------- CN update ------- */
         for(int VN=0;VN<H.n;VN++){
             if(VN>=PayLoad_H.n && VN<(Extra_H.n+PayLoad_H.n) && (it<iteration_open && payload_correct_flag==false)) continue;
@@ -199,7 +196,6 @@ void BP_for_CombineH(const struct parity_check H, const struct parity_check PayL
                 payload_error_syndrome = true;
                 break;
             }
-            payload_error_syndrome = false;
         }
         /* Determine if it is a syndrome -> guess * H^T = vector(0) - PayLoad */ 
         extra_error_syndrome = false;
@@ -213,7 +209,6 @@ void BP_for_CombineH(const struct parity_check H, const struct parity_check PayL
                 extra_error_syndrome = true;
                 break;
             }
-            extra_error_syndrome = false;
         }
         if(payload_correct_flag==false && it<iteration_open) extra_error_syndrome = true;
         if(payload_error_syndrome==false) payload_correct_flag = true;
@@ -232,10 +227,12 @@ void BP_for_CombineH(const struct parity_check H, const struct parity_check PayL
     }
     for(int vn=0;vn<Extra_H.n;vn++){
         if(Extra_Guess_CodeWord[vn]!=Extra_CodeWord[vn]){
-            extra_error_syndrome = false;
+            decode_Extra_flag = false;
             break;
         }
     }
+    free(Extra_Guess_CodeWord);
+    free(Payload_Guess_CodeWord);
     return;
 }
 
