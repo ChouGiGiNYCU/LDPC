@@ -7,7 +7,7 @@ SNR_min         = 1
 SNR_max         = 2
 SNR_Ratio       = 0.25
 Iteration_Limit = 200
-##########################
+##########################                                                                                                                                                                                         
 payload_PCM  = /mnt/c/Users/USER/Desktop/LDPC/PCM/PEGReg504x1008.txt
 extra_PCM    = /mnt/c/Users/USER/Desktop/LDPC/PCM/BCH_15_7.txt
 Combine_PCM  = PCM_P1008_EBCH15_EnhanceStruc_kSR.txt

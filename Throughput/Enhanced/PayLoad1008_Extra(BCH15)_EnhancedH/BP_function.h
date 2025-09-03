@@ -233,7 +233,7 @@ void BP_for_CombineH(struct parity_check H,struct parity_check PayLoad_H,struct 
                 payload_error_syndrome = true;
                 break;
             }
-            payload_error_syndrome = false;
+            
         }
         /* Determine if it is a syndrome -> guess * H^T = vector(0) - PayLoad */ 
         extra_error_syndrome = false;
@@ -247,7 +247,7 @@ void BP_for_CombineH(struct parity_check H,struct parity_check PayLoad_H,struct 
                 extra_error_syndrome = true;
                 break;
             }
-            extra_error_syndrome = false;
+            
         }
         if(payload_correct_flag==false && it<iteration_open) extra_error_syndrome = true;
         if(payload_error_syndrome==false) payload_correct_flag = true;

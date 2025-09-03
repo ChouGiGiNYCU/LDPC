@@ -15,7 +15,7 @@ void Encode_Process(const vector<vector<bool>>& G,const struct parity_check H,bo
 vector<double> LLR_Process(const struct parity_check H,const vector<int>& CodeWord,double sigma);
 
 int main(int argc,char* argv[]){
-    double total_frame_count = 10000;
+    double total_frame_count = 100;
     if(argc < 2){
         cout << "** Error ---- No file in \n" ; 
     }
@@ -33,7 +33,9 @@ int main(int argc,char* argv[]){
     int iteration_open = atoi(argv[10]); // Open_Iteration
     string RV1_punc_file = argv[11];
     int RV1_punc_nums = atoi(argv[12]);
-    string out_file = argv[13];
+    string payload_punc_file = argv[13];
+    int payload_punc_nums = atoi(argv[14]);
+    string out_file = argv[15];
     cout << "##############################" << "\n";
     cout << "H_combine_file : " << H_combine_file << "\n";
     cout << "Payload PCM file : " << Payload_PCM_file << "\n";
@@ -49,6 +51,8 @@ int main(int argc,char* argv[]){
     cout << "iteration_open : " << iteration_open << "\n";
     cout << "RV1_punc_file : " << RV1_punc_file << "\n";
     cout << "RV1_punc_nums : " << RV1_punc_nums << "\n";
+    cout << "payload_punc_file : " << payload_punc_file << "\n";
+    cout << "payload_punc_nums : " << payload_punc_nums << "\n";
     cout << "out_file : " << out_file << "\n";
     cout << "##############################" << "\n";
 
@@ -71,6 +75,10 @@ int main(int argc,char* argv[]){
     vector<int> RV1_punc_map; // RV0
     RV1_punc_map = Read_punc_pos(RV1_punc_file,RV1_punc_nums);
     cout << "Puncture position file read success !!" << endl;
+    /*-------------------------------------------*/
+    vector<int> payload_punc_map; // RV0
+    payload_punc_map = Read_punc_pos(payload_punc_file,payload_punc_nums);
+    cout << "payload punc position file read success !!" << endl;
     /*-------------------------------------------*/
      // define PayLoad_G
     vector<vector<bool>> PayLoad_G;
@@ -98,66 +106,74 @@ int main(int argc,char* argv[]){
     while(SNR<=SNR_max){
         double total_bits = 0 , correct_bits = 0;
         double sigma = sqrt(1/(2*code_rate*pow(10,SNR/10.0)));
+        int to_RV1 = 0;
         for(double frame_count=0;frame_count<total_frame_count;frame_count++){
             /* Process A with RV0*/
             // decode A version with RV0
             vector<int> A_CodeWord;
             vector<int> B_CodeWord;
+            vector<int> Xor_CodeWord(PayLoad_H.n);
             Encode_Process(PayLoad_G,PayLoad_H,PayLoad_Flag,A_CodeWord);
-            vector<int> Xor_CodeWord = A_CodeWord;
+            Encode_Process(Extra_G,Extra_H,Extra_Flag,B_CodeWord);
+            
             if(A_CodeWord.size()!=PayLoad_H.n){
                 cout << "Error -- A_CodeWord size is not equal to Payload_H.n\n";
                 exit(1);
             }
-            Encode_Process(Extra_G,Extra_H,Extra_Flag,B_CodeWord);
+
             if(B_CodeWord.size()!=Extra_H.n){
                 cout << "Error -- B_CodeWord size is not equal to Extra_H.n\n";
                 exit(1);
             }
-            /*RV1 position do LLR combine*/
+            for(int i=0;i<PayLoad_H.n;i++) Xor_CodeWord[i] = A_CodeWord[i];
             for(int i=0;i<RV1_punc_nums;i++){
                 int pos = RV1_punc_map[i];
                 Xor_CodeWord[pos] = A_CodeWord[pos] ^ B_CodeWord[i]; 
             }
-            // 傳送出去的 LLR用 Xor過後的，接下來在做puncture
-            vector<double> A_LLR = LLR_Process(PayLoad_H,Xor_CodeWord,sigma);
-            // RV2要傳送的LLR
-            vector<double> B_LLR(H.n,0);
-            for(int i=0;i<A_LLR.size();i++) B_LLR[i] = A_LLR[i];
             
-            for(int i=0;i<RV1_punc_nums;i++) A_LLR[RV1_punc_map[i]] = 0; // punc 7 position(RV1)
-
-            /* -----------------*/
-            bool decode_flag_A = BP_for_Payload(PayLoad_H,iteration_limit,A_LLR,A_CodeWord);
-            total_bits += (PayLoad_H.n-RV1_punc_nums); // total bits
-            if(decode_flag_A==true){
-                correct_bits += PayLoad_H.n - PayLoad_H.m; // info bits
-                continue;
-            }
-                    
-            // decode payload + Extra with Combine H architecture
-            /* Assign LLR to correct position*/
-            for(int vn=PayLoad_H.n;vn<(PayLoad_H.n+Extra_H.n);vn++) B_LLR[vn] = 0;
+            vector<double> A_LLR = LLR_Process(PayLoad_H,Xor_CodeWord,sigma); // RV1要傳送的LLR
+            vector<double> B_LLR(H.n,0);
+            for(int i=0;i<(Extra_H.n*2);i++) A_LLR.push_back(0); 
             for(int i=0;i<RV1_punc_nums;i++) {
                 int origin_pos = RV1_punc_map[i];
                 int super_pos  = PayLoad_H.n + Extra_H.n + i;
-                B_LLR[super_pos] = B_LLR[origin_pos];  
-                B_LLR[origin_pos] = 0; //  Superposition position
+                A_LLR[super_pos] = A_LLR[origin_pos];  
+                A_LLR[origin_pos] = 0; //  Superposition position
             }
+            for(int i=0;i<H.n;i++) B_LLR[i] = A_LLR[i];
+            for(int i=0;i<payload_punc_nums;i++) A_LLR[payload_punc_map[i]] = 0;
+            /* -----------------*/
             bool decode_Payload_flag = true, decode_Extra_flag = true;
-            BP_for_CombineH(H,PayLoad_H,Extra_H,iteration_limit,iteration_open,B_LLR,A_CodeWord,decode_Payload_flag,B_CodeWord,decode_Extra_flag);
-            total_bits += RV1_punc_nums;
-            if(decode_Payload_flag == true){
+            BP_for_CombineH(H,PayLoad_H,Extra_H,iteration_limit,iteration_open,A_LLR,A_CodeWord,decode_Payload_flag,B_CodeWord,decode_Extra_flag);
+            total_bits += (PayLoad_H.n-payload_punc_nums); // total bits
+            if(decode_Payload_flag==true){
+                correct_bits += (PayLoad_H.n - PayLoad_H.m); // info bits
+            }
+            if(decode_Extra_flag){
+                correct_bits += (Extra_H.n - Extra_H.m);
+            }
+            if(decode_Payload_flag && decode_Extra_flag){
+                continue;
+            } 
+            // decode payload + Extra with Combine H architecture
+            /* Assign LLR to correct position*/
+            to_RV1 += 1;
+            bool decode_Payload_flag_RV1 = true, decode_Extra_flag_RV1 = true;
+            BP_for_CombineH(H,PayLoad_H,Extra_H,iteration_limit,iteration_open,B_LLR,A_CodeWord,decode_Payload_flag_RV1,B_CodeWord,decode_Extra_flag_RV1);
+            total_bits += payload_punc_nums;
+            if(decode_Payload_flag==false && decode_Payload_flag_RV1==true){
                 correct_bits += PayLoad_H.n - PayLoad_H.m; // payload info bits + extra info bits
             }
-            if(decode_Extra_flag == true){
+            if(decode_Extra_flag==false && decode_Extra_flag_RV1==true){
                 correct_bits += Extra_H.n - Extra_H.m;
             }
         }
         cout << "correct_bits : " << correct_bits << " | total_bits : " << total_bits  << "\n";
+        cout << "RV1_num : " << to_RV1 << "\n";
         double throughput = (correct_bits/total_bits);
         outfile << SNR << ", " << throughput << "\n";
-        cout << "SNR : " << SNR << " | " << "Throughput : " << throughput << "% |\n ";
+        cout << "SNR : " << SNR << " | " << "Throughput : " << throughput << "\n ";
+        cout << "--------------------------------------------\n ";
         SNR += SNR_ratio;
     }
 }

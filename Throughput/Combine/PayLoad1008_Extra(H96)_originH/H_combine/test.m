@@ -5,8 +5,9 @@ close all;
 %%
 H1_file = 'C:\Users\USER\Desktop\LDPC\PCM\PEGReg504x1008.txt'; % payload data
 H2_file = 'C:\Users\USER\Desktop\LDPC\PCM\H_96_48.txt'; % extra data
-H_combine_file = 'PCM_Punc_kSR_Punc15.txt';
+H_combine_file = 'PCM_Punc_kSR_Punc96.txt';
 RV1_punc_pos = "Pos_RV1_puncpos.txt";
+payload_punc_pos = "Pos_payload.txt";
 H1 = readHFromFileByLine(H1_file);
 H2 = readHFromFileByLine(H2_file);
 [H1_r,H1_c] = size(H1);
@@ -22,14 +23,12 @@ zero4 = zeros([H2_r H2_c]);
 H_combine = [[H1,zero1,zero2];[zero3,H2,zero4]];
 
 Already_Punc_VNs = [];
-% Already_Punc_VNs = 1:(2*Z);
-% puncture_bits_num = H2_c + length(Already_Punc_VNs);
-puncture_bits_num = H2_c;
-% puncture_bits_num = H2_c*3;
+puncture_bits_num = H2_c*2;
 punc_pos_bits = Rate_Compatible_Punctured_With_Short_Block_Lengths(H1,puncture_bits_num,Already_Punc_VNs);
 punc_pos_bits = setdiff(punc_pos_bits,Already_Punc_VNs);
-RV1_punc = punc_pos_bits;
-%% check  punc_pos_bits 是否都是 1-SR
+RV1_punc = punc_pos_bits(1:H2_c);
+payload_punc = punc_pos_bits(H2_c+1:end);
+%% check  punc_pos_bits 1-SR
 for Punc_VN=RV1_punc 
     Punc_SCNs = transpose(find(H1(:,Punc_VN)==1));
     SCNs_num = 0;
@@ -60,6 +59,13 @@ writePCM(H_combine,H_combine_file);
 % write payload data with puncture bits position 
 fileID = fopen(RV1_punc_pos, 'w');
 for pos=RV1_punc
+    fprintf(fileID, '%d ', pos);
+end
+fprintf(fileID, '\n');
+fclose(fileID);
+
+fileID = fopen(payload_punc_pos, 'w');
+for pos=payload_punc
     fprintf(fileID, '%d ', pos);
 end
 fprintf(fileID, '\n');

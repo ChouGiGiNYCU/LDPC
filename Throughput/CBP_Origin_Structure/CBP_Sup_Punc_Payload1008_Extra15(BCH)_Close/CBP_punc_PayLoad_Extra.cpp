@@ -32,7 +32,7 @@ vector<vector<bool>> Read_File_G(string& file_name);
 vector<int> Read_punc_pos(string file,int  extra_nums);
 
 int main(int argc,char* argv[]){
-    double frame_error_lowwer_bound = 400;
+    double frame_error_lowwer_bound = 200;
     if(argc < 2){
         cout << "** Error ---- No file in \n" ; 
     }

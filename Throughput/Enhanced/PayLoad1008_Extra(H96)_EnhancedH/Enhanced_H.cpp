@@ -22,7 +22,7 @@ int main(int argc,char* argv[]){
     if(argc < 2){
         cout << "** Error ---- No file in \n" ; 
     }
-    int total_frame_count = 10000;
+    int total_frame_count = 100;
     string H_combine_file = argv[1];
     string Payload_PCM_file = argv[2];
     string Extra_PCM_file = argv[3];
@@ -39,6 +39,8 @@ int main(int argc,char* argv[]){
     string Superposition_origin_file = argv[11]; // 原本的方法做疊加，Extra/Payload都做punc
     string NewStructure_file = argv[12];
     string out_file = argv[13];
+    string payload_punc_file = argv[14];
+    int payload_punc_nums = atoi(argv[15]);
     cout << "##############################" << "\n";
     cout << "H_combine_file : " << H_combine_file << "\n";
     cout << "Payload PCM file : " << Payload_PCM_file << "\n";
@@ -54,6 +56,8 @@ int main(int argc,char* argv[]){
     cout << "iteration_open : " << iteration_open << "\n";
     cout << "iteration_open_flag : " << iteration_open_flag << "\n"; 
     cout << "Superposition_origin_file : " << Superposition_origin_file << "\n";
+    cout << "payload_punc_file : " << payload_punc_file << "\n";
+    cout << "payload_punc_nums : " << payload_punc_nums << "\n";
     cout << "##############################" << "\n";
     
     // define H_combine
@@ -80,6 +84,10 @@ int main(int argc,char* argv[]){
     Superpostion_Payload_Extra_NewStructure = Read_NewStrcuture_CSVfile(NewStructure_file);
     cout << "New_Structure_map position file read success !!" << endl;
     cout << "##############################" << "\n";
+    //------------------------------------------------
+    vector<int> payload_punc_map; // RV0
+    payload_punc_map = Read_punc_pos(payload_punc_file,payload_punc_nums);
+    cout << "payload punc position file read success !!" << endl;
     //------------------------------------------------
     // define PayLoad_G
     vector<boost::dynamic_bitset<>> Payload_Origin_G;
@@ -125,27 +133,13 @@ int main(int argc,char* argv[]){
             boost::dynamic_bitset<> Xor_CodeWord(PayLoad_H.n);
             boost::dynamic_bitset<> A_info_bits(PayLoad_Flag?Payload_Origin_G.size():(PayLoad_H.n-PayLoad_H.m));
             boost::dynamic_bitset<> B_info_bits(Extra_Flag?Extra_Origin_G.size():(Extra_H.n-Extra_H.m));
-            vector<double> A_LLR(PayLoad_H.n,0);
+            vector<double> A_LLR(H.n,0);
             vector<double> B_LLR(H.n,0);
             Process_info_bits(A_info_bits,PayLoad_Flag);
             Process_info_bits(B_info_bits,Extra_Flag);
             Encode_Process(Payload_Transpose_G,PayLoad_Flag,A_CodeWord,A_info_bits);
             Encode_Process(Extra_Transpose_G,Extra_Flag,B_CodeWord,B_info_bits);
-            Count_LLR(PayLoad_H,A_CodeWord,sigma,A_LLR);
-            for(auto& table:Superposition_origin){
-                int payload_pos = table.second;
-                A_LLR[payload_pos] = 0;
-            }
-            for(auto& table:Superpostion_Payload_Extra_NewStructure){
-                int payload_vn_punc  = table.payload_vn_punc;
-                A_LLR[payload_vn_punc] = 0;
-            }
-            bool decode_flag_A = BP_for_Payload(PayLoad_H,SNR,iteration_limit,A_LLR,A_CodeWord);
-            total_bits += (PayLoad_H.n-Superposition_origin.size()-Superpostion_Payload_Extra_NewStructure.size()); // total bits
-            if(decode_flag_A==true){
-                correct_bits += PayLoad_H.n - PayLoad_H.m; // info bits
-                continue;
-            }
+            for(int i=0;i<A_CodeWord.size();i++) Xor_CodeWord[i] = A_CodeWord[i];
             // PayLoad xor Extra with orgin method
             for(auto& table:Superposition_origin){
                 int extra_pos = table.first;
@@ -159,36 +153,58 @@ int main(int argc,char* argv[]){
                 int payload_vn_punc  = table.payload_vn_punc;
                 Xor_CodeWord[payload_vn_punc] = A_CodeWord[payload_vn_punc] ^ A_CodeWord[payload_vn_nonpunc] ^ B_CodeWord[extra_vn];
             }
-            Count_LLR(PayLoad_H,Xor_CodeWord,sigma,B_LLR);
-            for(int i=PayLoad_H.n;i<(PayLoad_H.n+Extra_H.n);i++) B_LLR[i] = 0;
+            Count_LLR(PayLoad_H,Xor_CodeWord,sigma,A_LLR);
+            for(int i=PayLoad_H.n;i<(PayLoad_H.n+Extra_H.n);i++) A_LLR[i] = 0;
             // 部分Extra 傳送過來的資訊要放上去
             auto pair_iter = Superposition_origin.begin();
             for(int i=(PayLoad_H.n+Extra_H.n);i<(PayLoad_H.n+Extra_H.n*2) && pair_iter!=Superposition_origin.end();i++,pair_iter++){
                 int origin_vn_pos = pair_iter->second;
-                B_LLR[i] = B_LLR[origin_vn_pos];
-                B_LLR[origin_vn_pos] = 0; // be punctured
+                A_LLR[i] = A_LLR[origin_vn_pos];
+                A_LLR[origin_vn_pos] = 0; // be punctured
             }
-            for(int i=(PayLoad_H.n+Extra_H.n*2);i<(PayLoad_H.n+Extra_H.n*3);i++) B_LLR[i] = 0; // be punctured
+            for(int i=(PayLoad_H.n+Extra_H.n*2);i<(PayLoad_H.n+Extra_H.n*3);i++) A_LLR[i] = 0; // be punctured
             auto pair_iter1  = Superpostion_Payload_Extra_NewStructure.begin();
             for(int i=(PayLoad_H.n+Extra_H.n*3);i<(PayLoad_H.n+Extra_H.n*4) && pair_iter1!=Superpostion_Payload_Extra_NewStructure.end();i++,pair_iter1++){
                 int Payload_punc_pos = pair_iter1->payload_vn_punc;
-                B_LLR[i] = B_LLR[Payload_punc_pos];
-                B_LLR[Payload_punc_pos] = 0;
+                A_LLR[i] = A_LLR[Payload_punc_pos];
+                A_LLR[Payload_punc_pos] = 0;
             }
+            for(int i=0;i<A_LLR.size();i++) B_LLR[i] = A_LLR[i];
+            for(int i=0;i<payload_punc_nums;i++){
+                A_LLR[payload_punc_map[i]] = 0;
+            }
+            
+            
             bool decode_payload_flag = true,decode_extra_flag = true;
-            BP_for_CombineH(H,PayLoad_H,Extra_H,iteration_limit,iteration_open,B_LLR,A_CodeWord,decode_payload_flag,B_CodeWord,decode_extra_flag);
-            total_bits += (Superposition_origin.size()+Superpostion_Payload_Extra_NewStructure.size()); // total bits
+            BP_for_CombineH(H,PayLoad_H,Extra_H,iteration_limit,iteration_open,A_LLR,A_CodeWord,decode_payload_flag,B_CodeWord,decode_extra_flag);
+            
+            
+            total_bits += (PayLoad_H.n-payload_punc_nums); // total bits
             if(decode_payload_flag==true){
                 correct_bits += PayLoad_H.n - PayLoad_H.m; // info bits
             }
-            if(decode_extra_flag==true){
+            if(decode_extra_flag){
+                correct_bits += (Extra_H.n - Extra_H.m);
+            }
+            if(decode_payload_flag && decode_extra_flag){
+                continue;
+            } 
+            
+            bool decode_Payload_flag_RV1 = true, decode_Extra_flag_RV1 = true;
+            BP_for_CombineH(H,PayLoad_H,Extra_H,iteration_limit,iteration_open,B_LLR,A_CodeWord,decode_Payload_flag_RV1,B_CodeWord,decode_Extra_flag_RV1);
+            total_bits += payload_punc_nums;
+            if(decode_payload_flag==false && decode_Payload_flag_RV1==true){
+                correct_bits += PayLoad_H.n - PayLoad_H.m; // payload info bits + extra info bits
+            }
+            if(decode_extra_flag==false && decode_Extra_flag_RV1==true){
                 correct_bits += Extra_H.n - Extra_H.m;
             }
         }
+        cout << "correct_bits : " << correct_bits << " | total_bits : " << total_bits  << "\n";
         double throughput = (correct_bits/total_bits);
-        cout << "correct_bits : " << correct_bits << " | " << total_bits << "\n";
         outfile << SNR << ", " << throughput << "\n";
-        cout << "SNR : " << SNR << " | " << "Throughput : " << throughput << "% |\n ";
+        cout << "SNR : " << SNR << " | " << "Throughput : " << throughput << "\n ";
+        cout << "--------------------------------------------\n ";
         SNR += SNR_ratio;
     }
     

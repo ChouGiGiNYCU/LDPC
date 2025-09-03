@@ -14,7 +14,7 @@ vector<int> Read_punc_pos(string file,int  extra_nums);
 vector<double> ProcessCodeWord_ReturnLLR(vector<vector<bool>>& G,struct parity_check H,bool Encode_Flag,double sigma,vector<int>& CodeWord);
 // use all zero to test
 int main(int argc,char* argv[]){
-    double total_frame_count = 10000;
+    double total_frame_count = 100;
     if(argc < 2){
         cout << "** Error ---- No file in \n" ; 
     }
@@ -50,7 +50,8 @@ int main(int argc,char* argv[]){
     // Read Puncture pos
     vector<int> RV1_punc_map; // RV0
     RV1_punc_map = Read_punc_pos(RV1_punc_file,RV1_punc_nums);
-    cout << "Puncture position file read success !!" << endl;
+    for(int pos:RV1_punc_map) cout << pos << " ";
+    cout << "\nPuncture position file read success !!" << endl;
     /*-------------------------------------------*/
      // define PayLoad_G
     vector<vector<bool>> PayLoad_G;
@@ -71,7 +72,7 @@ int main(int argc,char* argv[]){
     double code_rate = 1; // throughput
     while(SNR<=SNR_max){
         double total_bits = 0 , correct_bits = 0;
-        double sigma = sqrt(1/(2*code_rate*pow(10,SNR/10.0)));  // <-
+        double sigma = sqrt(1/(2*code_rate*pow(10,SNR/10.0)));
         for(double frame_count=0;frame_count<total_frame_count;frame_count++){
             /* ------------- Process A ------------- */
             // decode A version with RV0
@@ -85,18 +86,19 @@ int main(int argc,char* argv[]){
                     A_LLR[i] = 2*receive_value/pow(sigma,2); 
                 }
             }
-            A_LLR_copy = A_LLR;
+            for(int i=0;i<A_LLR.size();i++) A_LLR_copy[i] = A_LLR[i];
+            
             for(int i=0;i<RV1_punc_nums;i++) A_LLR[RV1_punc_map[i]] = 0; // punc 7 position(RV1)
             /* -----------------*/
-            bool decode_flag_A = BP_for_Payload(PayLoad_H,SNR,iteration_limit,A_LLR,A_CodeWord);
+            bool decode_flag_A = BP_for_Payload(PayLoad_H,iteration_limit,A_LLR,A_CodeWord);
             total_bits += (PayLoad_H.n-RV1_punc_nums); // total bits
             
             if(decode_flag_A){
-                correct_bits += PayLoad_H.n - PayLoad_H.m; // info bits
+                correct_bits += (PayLoad_H.n - PayLoad_H.m); // info bits
                 continue;
             }
             /* ------------- Process B ------------- */
-            bool decode_flag_B = BP_for_Payload(PayLoad_H,SNR,iteration_limit,A_LLR_copy,A_CodeWord);
+            bool decode_flag_B = BP_for_Payload(PayLoad_H,iteration_limit,A_LLR_copy,A_CodeWord);
             total_bits += RV1_punc_nums;
             if(decode_flag_B == true){
                 correct_bits += (PayLoad_H.n - PayLoad_H.m); // info bits
@@ -104,7 +106,6 @@ int main(int argc,char* argv[]){
         }
         double throughput = (correct_bits/total_bits);
         outfile << SNR << ", " << throughput << "\n";
-        cout << "correct_bits : " << correct_bits << " | total_bits : " << total_bits << "\n";
         cout << "SNR : " << SNR << " | " << "Throughput : " << throughput << "% |\n ";
         SNR += SNR_ratio;
     }
