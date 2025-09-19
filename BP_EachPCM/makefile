@@ -3,16 +3,16 @@ CFLAGS = -Wfatal-errors -std=c++11
 TARGET = CBP
 SRCS = CBP.cpp
 ##########################
-SNR_min = -1
+SNR_min = 0
 SNR_max = 6
 SNR_Ratio = 0.5
 Iteration_Limit = 200
 ##########################
-PCM_file_1 = /mnt/c/Users/USER/Desktop/LDPC/PCM/H_10_5.txt
-PCM_outfile_1 = CBP_H10x5_it_$(Iteration_Limit).csv
+PCM_file_1 = /mnt/c/Users/USER/Desktop/LDPC/PCM/H_96_48.txt
+PCM_outfile_1 = CBP_H96x48_it_$(Iteration_Limit).csv
 ############# G setting ###########
-GM_file_1 = /mnt/c/Users/USER/Desktop/LDPC/GM/H_10_5_G.txt
-GM_Encdoe_Flag_1 = 0
+GM_file_1 = /mnt/c/Users/USER/Desktop/LDPC/GM/H_96_48_G.txt
+GM_Encdoe_Flag_1 = 1
 ###################################
 
 

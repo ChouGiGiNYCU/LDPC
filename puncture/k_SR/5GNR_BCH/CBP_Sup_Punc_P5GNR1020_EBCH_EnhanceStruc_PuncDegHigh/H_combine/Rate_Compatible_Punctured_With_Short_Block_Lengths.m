@@ -270,7 +270,7 @@ function Punc_VNs = Rate_Compatible_Punctured_With_Short_Block_Lengths(H,punc_bi
         if Vns_num < diff
             Punc_VNs = union(Punc_VNs,VNs);
         else
-            while length(Punc_VNs)<punc_bits_num
+            while length(Punc_VNs)<punc_bits_num && numel(G{i})>0
                 % init 
                 R = 1:rows;
                 % find low SCN degree
