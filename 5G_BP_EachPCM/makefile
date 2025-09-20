@@ -3,18 +3,18 @@ CFLAGS = -Wfatal-errors -std=c++11
 TARGET = CBP
 SRCS = CBP.cpp
 ##########################
-SNR_min = 1
+SNR_min = 0
 SNR_max = 2
-SNR_Ratio = 0.25
+SNR_Ratio = 0.5
 Iteration_Limit = 200
 ##########################
-PCM_file_1 = /mnt/c/Users/USER/Desktop/LDPC/PCM/H_1020_330_690_BG1_Z15_fix.txt
-PCM_outfile_1 = CBP_H_1020_330_690_BG1_Z15_it_$(Iteration_Limit).csv
+PCM_file_1 = /mnt/c/Users/USER/Desktop/LDPC/PCM/H_1904_616_1288_BG1_Z28_fix.txt
+PCM_outfile_1 = CBP_H_1904_616_1288_BG1_Z28_it_$(Iteration_Limit).csv
 ############# G setting ###########
 GM_file_1 = /mnt/c/Users/USER/Desktop/LDPC/GM/None
 GM_Encdoe_Flag_1 = 0
 ###################################
-Z = 15
+Z = 28
 
 $(TARGET): $(SRCS)
 	$(CC) $(CFLAGS)  $(SRCS) -o  $(TARGET) -lpthread

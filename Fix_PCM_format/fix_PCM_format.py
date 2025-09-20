@@ -1,5 +1,5 @@
-file_name = r"C:\Users\USER\Desktop\LDPC\PCM\Polar_16.txt"
-fileout_name = r"Polar_16_fix.txt"
+file_name = r"C:\Users\USER\Desktop\LDPC\PCM\H_520_100_420_BG2_Z10.txt"
+fileout_name = r"H_520_100_420_BG2_Z10_fix.txt"
 with open(file_name,'r') as file :
     each_col_have_one_postion , each_row_have_one_postion = [],[]
     for idx,line in enumerate(file):
