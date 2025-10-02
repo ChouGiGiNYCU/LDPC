@@ -14,8 +14,8 @@ using namespace std;
 void FreeAllH(struct parity_check*H);
 void Read_File_H(struct parity_check *H,string& file_name_in);
 vector<boost::dynamic_bitset<>> Read_File_G(string& file_name);
-vector<int> Read_punc_pos(string file,int  extra_nums);
-vector<int> Read_Structure_pos(string file,int  extra_nums);
+vector<int> Read_punc_pos(string file,int  extra_cnt);
+vector<int> Read_Structure_pos(string file,int  extra_cnt);
 boost::dynamic_bitset<> Int_to_Binary(long long num,size_t bit_length);
 
 int main(int argc,char* argv[]){
@@ -25,14 +25,14 @@ int main(int argc,char* argv[]){
     string PayLoad_G_file = argv[3];
     string Extra_G_file = argv[4];
     string Superposition_origin_file = argv[5]; // 原本的方法做疊加，Extra/Payload都做punc
-    int extra_num = atoi(argv[6]);
+    int extra_cnt = atoi(argv[6]);
     cout << "##############################" << "\n";
     cout << "Payload PCM file : " << Payload_PCM_file << "\n";
     cout << "Extra PCM file : " << Extra_PCM_file << "\n";
     cout << "Payload G file : " << PayLoad_G_file << "\n";
     cout << "Extra G file : " << Extra_G_file << "\n";
     cout << "Superposition_origin_file : " << Superposition_origin_file << "\n";
-    cout << "extra_num : " << extra_num << "\n";
+    cout << "extra_num : " << extra_cnt << "\n";
     cout << "##############################" << "\n";
     // define PayLoad_H
     struct parity_check PayLoad_H;
@@ -44,7 +44,8 @@ int main(int argc,char* argv[]){
     cout << "Extra_H file read success!!" << endl;
     cout << "##############################" << "\n";
     // Read Superposiotn origin pos
-    vector<int> punc_map = Read_punc_pos(Superposition_origin_file,extra_num);
+    vector<int> punc_map = Read_punc_pos(Superposition_origin_file,extra_cnt);
+    
     cout << "Puncture position(Superposition origin) file read success !!" << endl;
     
 
@@ -76,18 +77,23 @@ int main(int argc,char* argv[]){
     int payload_bits_num = Payload_Origin_G.size();
     int extra_bits_num   = Extra_Origin_G.size();
     int min_col_weight = INT_MAX;
-    for(long long payload_num=1;payload_num<(1LL)<<payload_bits_num;payload_num++){
+    for(long long payload_num=0;payload_num<(1LL)<<payload_bits_num;payload_num++){
         boost::dynamic_bitset<> payload_info = Int_to_Binary(payload_num,payload_bits_num);
         GF2_Mat_Vec_Dot(payload_info,Payload_Transpose_G,payload_Encode); 
         cout << "payload_info : " << payload_info << endl;
-        for(long long extra_num=0;extra_num<(1LL)<<extra_bits_num;extra_num++){
+        for(long long extra_num=0;extra_num<((1LL)<<extra_bits_num);extra_num++){
             boost::dynamic_bitset<> extra_info = Int_to_Binary(extra_num,extra_bits_num);
+            // cout << "extra_info : " << extra_info << endl;
             GF2_Mat_Vec_Dot(extra_info,Extra_Transpose_G,extra_Encode);
+            // cout << "extra codeword : " << extra_Encode << "\n";
             for(int i=0;i<PayLoad_H.n;i++) Xor_CodeWord[i] = payload_Encode[i]; // copy
-            for(int i=0;i<extra_num;i++){
-                Xor_CodeWord[i] = payload_Encode[punc_map[i]] ^ extra_Encode[i];
+            for(int i=0;i<extra_cnt;i++){
+                int pos  = punc_map[i];
+                Xor_CodeWord[i] = payload_Encode[pos] ^ extra_Encode[i];
             }
+            // exit(1);
             size_t ones_num = Xor_CodeWord.count();
+            if(ones_num==0 && payload_num==0) continue;
             if(ones_num<min_col_weight){
                 min_col_weight = ones_num;
                 min_weight_codeword.clear();
@@ -195,11 +201,11 @@ void Read_File_H(struct parity_check *H,string& file_name_in){
         file_in.close();
         exit(1);
 }
-vector<int> Read_punc_pos(string file,int extra_nums){
+vector<int> Read_punc_pos(string file,int extra_cnt){
     ifstream punc_file(file);
     vector<int> punc_map;
     // cout <<  "punc pos : " ;
-    for(int i=0;i<extra_nums;i++){
+    for(int i=0;i<extra_cnt;i++){
         int pos;
         punc_file >> pos;
         // cout << " " << pos << endl;
@@ -209,10 +215,10 @@ vector<int> Read_punc_pos(string file,int extra_nums){
     return punc_map;
 }
 
-vector<int> Read_Structure_pos(string file,int  extra_nums){
+vector<int> Read_Structure_pos(string file,int  extra_cnt){
     ifstream Structure_file(file);
     vector<int> Structure_map;
-    for(int i=0;i<extra_nums;i++){
+    for(int i=0;i<extra_cnt;i++){
         int pos;
         Structure_file >> pos;
         Structure_map.push_back(pos-1);

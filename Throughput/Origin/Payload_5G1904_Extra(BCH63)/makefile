@@ -3,8 +3,8 @@ CFLAGS = -Wfatal-errors -std=c++11
 TARGET = Origin_H_throughput
 SRCS = Origin_H_throughput.cpp
 ##########################
-SNR_min = -5
-SNR_max = 1
+SNR_min = -6
+SNR_max = 3
 SNR_Ratio = 0.5
 Iteration_Limit = 200
 ##########################

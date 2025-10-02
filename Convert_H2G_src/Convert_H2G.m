@@ -1,8 +1,8 @@
 clear all;
 clc;
 % H_matrix = [0 1 1 0 0 0;1 0 1 1 0 0;1 0 0 1 1 0;0 0 0 0 1 1];
-file_name = "C:\Users\USER\Desktop\LDPC\PCM\BCH_31_16.txt";
-G_filename = "C:\Users\USER\Desktop\LDPC\GM\BCH_31_16_G.txt";
+file_name = "C:\Users\USER\Desktop\LDPC\puncture_dmin\Enhanced\P31_E3\PCM_P31_EH3_EnhanceStruc_kSR.txt";
+G_filename = "C:\Users\USER\Desktop\LDPC\puncture_dmin\Enhanced\P31_E3\PCM_P31_EH3_EnhanceStruc_kSR_G.txt";
 H_matrix = readHFromFileByLine(file_name);
 [N, K, M_ori, M_sys, sysG, sysH, G, PCM ]= f_GaussJordanE_gf2_HPIform_TFR(H_matrix);
 writeMatrixToFile(G,G_filename);

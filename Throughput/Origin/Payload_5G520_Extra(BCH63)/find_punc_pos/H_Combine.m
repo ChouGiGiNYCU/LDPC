@@ -3,8 +3,8 @@ clc;
 clear all;
 close all;
 %%
-H1_file = 'C:\Users\USER\Desktop\LDPC\PCM\H_1904_616_1288_BG1_Z28_fix.txt'; % payload data
-Z = 28;
+H1_file = 'C:\Users\USER\Desktop\LDPC\PCM\H_520_100_420_BG2_Z10_fix.txt'; % payload data
+Z = 10;
 RV1_num = 63;
 puncture_position_bits_file = "RV1_punc_pos_file.txt";
 H1 = readHFromFileByLine(H1_file);

@@ -3,7 +3,7 @@ CFLAGS = -Wfatal-errors -std=c++11
 TARGET = CBP
 SRCS = CBP.cpp
 ##########################
-SNR_min = 0
+SNR_min = 1
 SNR_max = 2
 SNR_Ratio = 0.5
 Iteration_Limit = 200

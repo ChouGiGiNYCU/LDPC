@@ -4,7 +4,7 @@ TARGET = min_distance_col
 SRCS   = min_distance_col.cpp
 
 ############# G setting ###########
-Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/BCH_31_16_G.txt
+Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/PCM_P31_EH3_EnhanceStruc_kSR_G.txt
 
 
 $(TARGET): $(SRCS)

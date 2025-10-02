@@ -4,8 +4,8 @@ clear all;
 close all;
 %%
 H1_file = 'C:\Users\USER\Desktop\LDPC\PCM\BCH_31_16.txt'; % payload data
-H2_file = 'C:\Users\USER\Desktop\LDPC\PCM\rep_1_3.txt'; % extra data
-H_combine_file = 'PCM.txt';
+H2_file = 'C:\Users\USER\Desktop\LDPC\PCM\H_10_5.txt'; % extra data
+H_combine_file = 'Origin_P31_E10.txt';
 payload_punc_pos = "Pos_payload.txt";
 H1 = readHFromFileByLine(H1_file);
 H2 = readHFromFileByLine(H2_file);
