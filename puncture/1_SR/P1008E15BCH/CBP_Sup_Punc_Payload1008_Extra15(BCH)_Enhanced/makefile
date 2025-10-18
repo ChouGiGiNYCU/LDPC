@@ -21,8 +21,8 @@ PayLoad_out_file = kSR_LBP_P1008_E15_PayLoad_it$(Iteration_Limit)_EnhanceStruc.c
 Extra_out_file   = kSR_LBP_P1008_E15_Extra_it$(Iteration_Limit)_EnhanceStruc.csv
 Super_out_file   = kSR_LBP_P1008_E15_Sup_it$(Iteration_Limit)_EnhanceStruc.csv
 ############# G setting ###########
-# payload_Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/H_2640_1320.txt
-payload_Generater_matrix_file = None
+payload_Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/PEGReg504x1008_G.txt
+# payload_Generater_matrix_file = None
 extra_Generater_matrix_file   = /mnt/c/Users/USER/Desktop/LDPC/GM/BCH_15_7_G.txt
 ###################################
 Open_Iteration = 100

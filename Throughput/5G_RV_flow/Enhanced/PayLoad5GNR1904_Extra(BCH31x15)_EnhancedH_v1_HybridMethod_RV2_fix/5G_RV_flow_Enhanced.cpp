@@ -22,7 +22,7 @@ int main(int argc,char* argv[]){
     if(argc < 2){
         cout << "** Error ---- No file in \n" ; 
     }
-    int total_frame_count = 1000;
+    int total_frame_count = 100;
     string H_combine_file = argv[1];
     string Payload_PCM_file = argv[2];
     string Extra_PCM_file = argv[3];
@@ -44,7 +44,7 @@ int main(int argc,char* argv[]){
     int RV1_pos = atoi(argv[16]);
     int RV2_pos = atoi(argv[17]);
     int RV3_pos = atoi(argv[18]);
-    
+    int Each_Tx_Znum = atoi(argv[19]);
     cout << "##############################" << "\n";
     cout << "H_combine_file : " << H_combine_file << "\n";
     cout << "Payload PCM file : " << Payload_PCM_file << "\n";
@@ -139,7 +139,7 @@ int main(int argc,char* argv[]){
             boost::dynamic_bitset<> Xor_CodeWord(PayLoad_H.n); 
             boost::dynamic_bitset<> Payload_Info(PayLoad_Flag?Payload_Origin_G.size():(PayLoad_H.n-PayLoad_H.m));
             boost::dynamic_bitset<> Extra_Info(Extra_Flag?Extra_Origin_G.size():(Extra_H.n-Extra_H.m));
-            vector<double> LLR(PayLoad_H.n,0);
+           
             vector<double> First_tx_LLR(PayLoad_H.n,0);
             vector<double> Second_tx_LLR(H.n,0);
             Process_info_bits(Payload_Info,PayLoad_Flag);
@@ -160,28 +160,27 @@ int main(int argc,char* argv[]){
                 int payload_vn_punc  = table.payload_vn_punc;
                 Xor_CodeWord[payload_vn_punc] = Payload_CodeWord[payload_vn_punc] ^ Payload_CodeWord[payload_vn_nonpunc] ^ Extra_CodeWord[extra_vn];
             }
-            Count_LLR(PayLoad_H,Xor_CodeWord,sigma,LLR);
-            // puncture prev 2*Z position
-            for(int i=0;i<2*Z;i++) LLR[i] = 0;
-            // RV0 for paylaod
-            for(int i=RV0_pos*Z;i<RV1_pos*Z;i++){
-                First_tx_LLR[i] = LLR[i];
+            // count RV0 LLR 
+            for(int i=RV0_pos*Z;i<(RV0_pos*Z+Each_Tx_Znum*Z);i++){
+                double receive_value=(double)(-2*Xor_CodeWord[i]+1) + sigma*gasdev(); // fixed power
+                double LLR =2*receive_value/pow(sigma,2);
+                First_tx_LLR[i] = LLR;
+                Second_tx_LLR[i] = LLR;  
+            }
+            for(int i=RV2_pos*Z;i<(RV2_pos+Each_Tx_Znum)*Z;i++){
+                double receive_value=(double)(-2*Xor_CodeWord[i]+1) + sigma*gasdev(); // fixed power
+                double LLR =2*receive_value/pow(sigma,2);
+                Second_tx_LLR[i] = LLR; 
             }
             bool result = BP_for_Payload(PayLoad_H,iteration_limit,First_tx_LLR,Payload_CodeWord);
-            total_bits += (RV1_pos-RV0_pos)*Z;
+            total_bits += Each_Tx_Znum*Z;
             if(result==true){
                 correct_bits += PayLoad_H.n - PayLoad_H.m;
                 RV0++;
                 continue;
             } 
             
-            // RV1 for paylaod + Extra
-            for(int i=RV0_pos*Z;i<RV1_pos*Z;i++){
-                Second_tx_LLR[i] = LLR[i];
-            }
-            for(int i=RV2_pos*Z;i<RV3_pos*Z;i++){
-                Second_tx_LLR[i] = LLR[i];
-            }
+            
             for(int i=PayLoad_H.n;i<(PayLoad_H.n+Extra_H.n);i++) Second_tx_LLR[i] = 0;
             // 部分Extra 傳送過來的資訊要放上去
             auto pair_iter = Superposition_origin.begin();

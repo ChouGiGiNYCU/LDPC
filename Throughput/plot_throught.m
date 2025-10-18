@@ -595,3 +595,30 @@ title("Payload 5GNR-1904")
 xlabel("SNR");
 ylabel("Throughtput")
 grid on;
+%%
+
+% plot 5G 1904 Extra BCH 63 RV30
+clear all;
+clc;
+
+
+% 假設 Excel 檔名為 data.xlsx，且第一列為欄位名稱：SNR, Throughput
+Origin_filename   = "C:\Users\USER\Desktop\LDPC\Throughput\5G_RV_flow\Origin\Payload_5G1904_Extra_3RV\a.csv";
+Enhanced_5G1904_BCH31x16_Hybrid_filename = "C:\Users\USER\Desktop\LDPC\Throughput\5G_RV_flow\Enhanced\PayLoad5GNR1904_Extra(BCH31x15)_EnhancedH_v1_HybridMethod_RV3\a.csv";    % Excel 檔案名稱
+
+Origin_table  = readtable(Origin_filename);
+Enhanced_5G1904_BCH31x16_Hybrid = readtable(Enhanced_5G1904_BCH31x16_Hybrid_filename);
+figure();
+plot(Origin_table.SNR,Origin_table.Throughput,"-*","Color",[0 0 0],"LineWidth",2);
+hold on;
+
+plot(Enhanced_5G1904_BCH31x16_Hybrid.SNR,Enhanced_5G1904_BCH31x16_Hybrid.Throught,"->","Color",[0.6350 0.0780 0.1840],"LineWidth",2);
+hold on;
+
+legend("Only Payload","Enhance(BCH31X16) - 5G HARQ");
+
+% legend("Only Payload","Enhance(BCH63X30) - Hybrid method","Enhance(BCH63X30)","Enhance(BCH63X36) - Hybrid method","Enhance(BCH63X36)","Enhance(BCH63X45) - Hybrid method","Enhance(BCH63X45)");
+title("Payload 5GNR-1904 3RV")
+xlabel("SNR");
+ylabel("Throughtput")
+grid on;

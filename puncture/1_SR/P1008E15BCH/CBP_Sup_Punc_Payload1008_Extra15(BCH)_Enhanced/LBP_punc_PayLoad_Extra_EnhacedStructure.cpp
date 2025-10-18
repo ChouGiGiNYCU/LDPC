@@ -147,8 +147,7 @@ int main(int argc,char* argv[]){
     double code_rate = (double)(PayLoad_H.n-PayLoad_H.m+Extra_Origin_G.size())/(double)PayLoad_H.n; 
     cout << "CodeRate : " << code_rate << "\n";
     
-    vector<vector<double>> CN_2_VN_LLR(H.n);  // Vector of vectors for CN to VN LLR
-    vector<vector<double>> VN_2_CN_LLR(H.m);  // Vector of vectors for VN to CN LLR
+    vector<vector<double>> CN_2_VN_LLR(H.m);  // Vector of vectors for CN to VN LLR
     // Initialize each row of the vectors with the appropriate size
     for (int i = 0; i < H.m; i++) {
         CN_2_VN_LLR[i].resize(H.max_row_arr[i], 0.0);  // Resize each row to match max_col_arr[i] and initialize with 0.0
@@ -180,6 +179,7 @@ int main(int argc,char* argv[]){
         fill(superposition_bit_error_count.begin(),superposition_bit_error_count.end(),0.0);
         clk_start = clock();
         while(payload_frame_error < frame_error_lowwer_bound){
+            // cout << "payload_frame_error : " << payload_frame_error << "\n";
             // 處理 Payload CodeWord 是zero 還是Encode
             if(PayLoad_Flag){
                 for(int i=0;i<Payload_Origin_G.size();i++){
@@ -271,7 +271,7 @@ int main(int argc,char* argv[]){
                     // count all LLR sum 
                     for(int i=0;i<H.max_row_arr[CN];i++){ // Each connect VNs by CN
                         int VN=H.VN_2_CN_pos[CN][i];
-                        if(VN>=PayLoad_H.n && VN<(Extra_H.n+PayLoad_H.n) && (it<iteration_open && payload_correct_flag==false)) continue;
+                        // if(VN>=PayLoad_H.n && VN<(Extra_H.n+PayLoad_H.n) && (it<iteration_open && payload_correct_flag==false)) continue;
                         double tmp_LLR = receiver_LLR[VN]-CN_2_VN_LLR[CN][i];
                         phi_beta_sum += phi(abs(tmp_LLR));
                         alpha *= tmp_LLR>=0?1:-1;
