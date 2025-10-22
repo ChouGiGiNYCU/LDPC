@@ -1,12 +1,12 @@
 #ifndef UseFuction_H  
 #define UseFuction_H  
 #include<fstream>
+#include <sstream>
 #include<random>
 #include<vector>
 #include<chrono>
 #include<iostream>
 #include <stdexcept>
-#include <sstream>
 #include <boost/dynamic_bitset.hpp>
 
 template <typename T>
@@ -95,5 +95,34 @@ bool random_generation(){
     double currentRandomNumber = unif(rng);
     return currentRandomNumber>0.5?true:false;
 }
+
+
+std::vector<std::pair<int,int>> Read_Extra2Pyalod_CSVfile(std::string& file_name){
+    std::ifstream file(file_name);
+    std::string line;
+    std::vector<std::pair<int,int>> Map_Extra2Payload;
+    // 讀第一行（標題）並略過
+    std::getline(file, line);
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string vn_str, girth_str;
+        // 用逗號分割
+        std::getline(ss, vn_str, ',');
+        std::getline(ss, girth_str, ',');
+        int Extra_vn   = std::stoi(vn_str) - 1; // idx 要變成 0 idx
+        int Payload_vn = std::stoi(girth_str) - 1; // idx 要變成 0 idx
+        Map_Extra2Payload.emplace_back(Extra_vn,Payload_vn);
+    }
+
+    // 印出確認
+    // for (auto& node : Map_Extra2Payload) {
+    //     int Extra_vn = node.first;
+    //     int Payload_vn = node.second;
+    //     cout << "Extra_vn : " << Extra_vn << ", Payload_vn : " << Payload_vn << "\n";
+    // }
+
+    return Map_Extra2Payload;
+}
+
 
 #endif
