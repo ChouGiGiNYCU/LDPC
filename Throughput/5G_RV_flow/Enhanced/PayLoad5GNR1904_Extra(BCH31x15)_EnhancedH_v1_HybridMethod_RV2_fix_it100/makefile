@@ -25,7 +25,7 @@ RV2_pos = 35
 RV3_pos = 58
 Each_Tx_Znum = 30
 ###################################
-Open_Iteration = 100
+Open_Iteration = 50
 out_file = throughput.csv
 
 $(TARGET): $(SRCS)
