@@ -199,7 +199,7 @@ int main(int argc,char* argv[]){
             
             bool decode_Payload_flag = true, decode_Extra_flag = true;
             BP_for_CombineH(H,PayLoad_H,Extra_H,iteration_limit,iteration_open,Second_tx_LLR,Payload_CodeWord,decode_Payload_flag,Extra_CodeWord,decode_Extra_flag);
-            total_bits += (RV3_pos-RV2_pos)*Z;
+            total_bits += Each_Tx_Znum*Z;
             if(decode_Payload_flag==true){
                 correct_bits += PayLoad_H.n - PayLoad_H.m; // payload info bits + extra info bits
             }

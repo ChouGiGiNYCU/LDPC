@@ -6,7 +6,7 @@ SRCS   = 5G_RV_flow_Enhanced.cpp
 SNR_min         = -4.5
 SNR_max         = 4
 SNR_Ratio       = 0.5
-Iteration_Limit = 100
+Iteration_Limit = 200
 ##########################                                                                                                                                                                                         
 payload_PCM  = /mnt/c/Users/USER/Desktop/LDPC/PCM/H_1904_616_1288_BG1_Z28_fix.txt
 extra_PCM    = /mnt/c/Users/USER/Desktop/LDPC/PCM/BCH_31_16.txt
@@ -26,7 +26,7 @@ RV3_pos = 58
 Each_Tx_Znum = 30
 ###################################
 Open_Iteration = 50
-out_file = throughput.csv
+out_file = throughput_it200.csv
 
 $(TARGET): $(SRCS)
 	$(CC) $(CFLAGS)  $(SRCS) -o  $(TARGET) -lpthread
