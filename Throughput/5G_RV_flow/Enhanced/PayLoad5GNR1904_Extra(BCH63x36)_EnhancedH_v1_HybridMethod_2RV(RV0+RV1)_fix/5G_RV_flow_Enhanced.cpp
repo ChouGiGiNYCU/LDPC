@@ -168,17 +168,13 @@ int main(int argc,char* argv[]){
                 Second_tx_LLR[i] = LLR; 
             }
             
-            for(int i=RV3_pos*Z;i<PayLoad_H.n;i++){
+            for(int i=RV1_pos*Z;i<(RV1_pos*Z+Each_Tx_Znum*Z);i++){
                 double receive_value=(double)(-2*Xor_CodeWord[i]+1) + sigma*gasdev();
                 double LLR = 2*receive_value/pow(sigma,2); 
-                Second_tx_LLR[i] = LLR;
+                if(i<(RV0_pos*Z+Each_Tx_Znum*Z)) Second_tx_LLR[i] = (Second_tx_LLR[i] + LLR)/2;
+                else Second_tx_LLR[i] = LLR;
             }
 
-            for(int i=(RV0_pos*Z);i<RV0_pos*Z+(Each_Tx_Znum*Z-(PayLoad_H.n-RV3_pos*Z));i++){
-                double receive_value=(double)(-2*Xor_CodeWord[i]+1) + sigma*gasdev();
-                double LLR = 2*receive_value/pow(sigma,2); 
-                Second_tx_LLR[i] = (Second_tx_LLR[i]+LLR)/2; // combine LLR
-            }
             /*---------------- RV0 ----------------*/
             bool RV0_flag = BP_for_Payload(PayLoad_H,iteration_limit,First_tx_LLR,Payload_CodeWord);
             total_bits += Each_Tx_Znum*Z;
