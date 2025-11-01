@@ -3,10 +3,10 @@ CFLAGS = -Wfatal-errors -std=c++11
 TARGET = 5G_RV_flow_Enhanced
 SRCS   = 5G_RV_flow_Enhanced.cpp
 ##########################
-SNR_min         = -4
-SNR_max         = 6
+SNR_min         = 1
+SNR_max         = 2
 SNR_Ratio       = 0.5
-Iteration_Limit = 200
+Iteration_Limit = 20
 ##########################                                                                                                                                                                                         
 payload_PCM  = /mnt/c/Users/USER/Desktop/LDPC/PCM/H_1904_616_1288_BG1_Z28_fix.txt
 extra_PCM    = /mnt/c/Users/USER/Desktop/LDPC/PCM/BCH_63_36.txt
@@ -25,8 +25,8 @@ RV2_pos = 35
 RV3_pos = 58
 Each_Tx_Znum = 30
 ###################################
-Open_Iteration = 100
-out_file = Troughput.csv
+Open_Iteration = 14
+out_file = Troughput_it20_14_6_v1.csv
 
 $(TARGET): $(SRCS)
 	$(CC) $(CFLAGS)  $(SRCS) -o  $(TARGET) -lpthread

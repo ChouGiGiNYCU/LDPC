@@ -58,6 +58,7 @@ int main(int argc,char* argv[]){
     cout << "SNR_max : " << SNR_max << "\n";
     cout << "SNR_ratio : " << SNR_ratio << "\n";
     cout << "iteration_open : " << iteration_open << "\n";
+    cout << "out : " << out_file << endl;
     cout << "iteration_open_flag : " << iteration_open_flag << "\n"; 
     cout << "Superposition_origin_file : " << Superposition_origin_file << "\n";
     cout << "Z : " << Z << "\n";
