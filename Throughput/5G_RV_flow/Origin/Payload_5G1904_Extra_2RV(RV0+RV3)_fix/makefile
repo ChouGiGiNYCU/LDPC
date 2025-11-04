@@ -4,11 +4,11 @@ TARGET = 5G_RV_flow_Origin
 SRCS = 5G_RV_flow_Origin.cpp
 ##########################
 SNR_min = -4
-SNR_max = 4.5
-SNR_Ratio = 0.5
-Iteration_Limit = 20
+SNR_max = 6
+SNR_Ratio = 0.25
+Iteration_Limit = 50
 ##########################
-payload_PCM = /mnt/c/Users/USER/Desktop/LDPC/PCM/H_1904_616_1288_BG1_Z28_fix.txt
+payload_PCM = /mnt/c/Users/chougigi/Desktop/LDPC//PCM/H_1904_616_1288_BG1_Z28_fix.txt
 Z = 28
 RV0_pos = 2
 RV1_pos = 19
@@ -16,11 +16,11 @@ RV2_pos = 35
 RV3_pos = 58
 Each_Tx_Znum = 30
 ############# G setting ###########
-# payload_Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/PEGReg504x1008_G.txt
+# payload_Generater_matrix_file = /mnt/c/Users/chougigi/Desktop/LDPC//GM/PEGReg504x1008_G.txt
 payload_Generater_matrix_file = None
 
 ###################################
-out_file = throughput_it20.csv
+out_file = throughput_it50.csv
 
 $(TARGET): $(SRCS)
 	$(CC) $(CFLAGS)  $(SRCS) -o  $(TARGET) -lpthread

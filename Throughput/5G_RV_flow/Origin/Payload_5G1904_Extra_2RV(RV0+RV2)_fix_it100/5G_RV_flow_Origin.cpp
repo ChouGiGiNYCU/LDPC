@@ -14,7 +14,7 @@ vector<int> Read_punc_pos(string file,int  extra_nums);
 vector<double> ProcessCodeWord_ReturnLLR(vector<vector<bool>>& G,struct parity_check H,bool Encode_Flag,double sigma,vector<int>& CodeWord);
 // use all zero to test
 int main(int argc,char* argv[]){
-    double total_frame_count = 100;
+    double total_frame_count = 200;
     if(argc < 2){
         cout << "** Error ---- No file in \n" ; 
     }

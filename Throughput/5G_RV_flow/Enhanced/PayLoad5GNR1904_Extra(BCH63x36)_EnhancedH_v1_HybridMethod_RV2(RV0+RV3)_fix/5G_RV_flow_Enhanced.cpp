@@ -22,7 +22,7 @@ int main(int argc,char* argv[]){
     if(argc < 2){
         cout << "** Error ---- No file in \n" ; 
     }
-    int total_frame_count = 100;
+    int total_frame_count = 200;
     string H_combine_file = argv[1];
     string Payload_PCM_file = argv[2];
     string Extra_PCM_file = argv[3];

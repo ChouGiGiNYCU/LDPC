@@ -22,7 +22,7 @@ int main(int argc,char* argv[]){
     if(argc < 2){
         cout << "** Error ---- No file in \n" ; 
     }
-    int total_frame_count = 100;
+    int total_frame_count = 200;
     string H_combine_file = argv[1];
     string Payload_PCM_file = argv[2];
     string Extra_PCM_file = argv[3];
@@ -205,8 +205,8 @@ int main(int argc,char* argv[]){
             }
             if(decode_Extra_flag==true){
                 correct_bits += Extra_H.n - Extra_H.m;
-                RV1++;
             }
+            if(decode_Payload_flag && decode_Extra_flag) RV1++;
             
         }
         cout << "RV0 : " << RV0 << " | RV1 : " << RV1 << " | Hybrid : " << Hybrid << "\n";

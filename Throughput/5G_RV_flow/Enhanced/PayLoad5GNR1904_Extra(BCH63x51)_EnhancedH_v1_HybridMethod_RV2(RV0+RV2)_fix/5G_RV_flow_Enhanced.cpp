@@ -205,9 +205,9 @@ int main(int argc,char* argv[]){
             }
             if(decode_Extra_flag==true){
                 correct_bits += Extra_H.n - Extra_H.m;
-                RV1++;
+                
             }
-            
+            if(decode_Payload_flag && decode_Extra_flag) RV1++;
         }
         cout << "RV0 : " << RV0 << " | RV1 : " << RV1 << " | Hybrid : " << Hybrid << "\n";
         // cout << "correct_bits : " << correct_bits << " | total_bits : " << total_bits  << "\n";
