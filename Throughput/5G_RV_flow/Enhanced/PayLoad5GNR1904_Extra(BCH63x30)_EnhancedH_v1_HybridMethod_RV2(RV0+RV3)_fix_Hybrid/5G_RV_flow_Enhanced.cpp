@@ -223,11 +223,12 @@ int main(int argc,char* argv[]){
                 continue;
             }
             /* --------- Hybrid decode Payload ---------*/
-            bool hybrid_flag = BP_for_Payload(PayLoad_H,iteration_limit,Third_LLR_Payload,Payload_CodeWord);
-            if(hybrid_flag){
-                correct_bits += PayLoad_H.n - PayLoad_H.m;
-                RV2++;
-    
+            if(decode_Payload_flag_RV1==false && decode_Extra_flag_RV1==false){
+                bool hybrid_flag = BP_for_Payload(PayLoad_H,iteration_limit,Third_LLR_Payload,Payload_CodeWord);
+                if(hybrid_flag){
+                    correct_bits += PayLoad_H.n - PayLoad_H.m;
+                    RV2++;
+                }
             }
             
         }

@@ -222,11 +222,14 @@ int main(int argc,char* argv[]){
                 RV1++;
                 continue;
             }
-            bool Hybrid_flag = BP_for_Payload(PayLoad_H, iteration_limit,Third_tx_LLR,Payload_CodeWord);
-            if(Hybrid_flag){
-                RV2++;
-                correct_bits += PayLoad_H.n - PayLoad_H.m; // payload info bits + extra info bits
+            if(decode_Payload_flag_RV1==false && decode_Extra_flag_RV1==false){
+                bool Hybrid_flag = BP_for_Payload(PayLoad_H, iteration_limit,Third_tx_LLR,Payload_CodeWord);
+                if(Hybrid_flag){
+                    RV2++;
+                    correct_bits += PayLoad_H.n - PayLoad_H.m; // payload info bits + extra info bits
+                }
             }
+            
             
         }
         cout << "RV0 : " << RV0 << " | RV1 : " << RV1 << " | RV2 : " << RV2 << "\n";

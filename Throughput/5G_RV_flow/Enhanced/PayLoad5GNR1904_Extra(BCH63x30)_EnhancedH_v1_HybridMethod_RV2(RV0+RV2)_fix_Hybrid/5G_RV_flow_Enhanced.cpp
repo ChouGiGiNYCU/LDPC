@@ -213,12 +213,15 @@ int main(int argc,char* argv[]){
                 RV1++;
                 continue;
             }
-            bool Hybrid_flag = BP_for_Payload(PayLoad_H,iteration_limit,Third_tx_Payload,Payload_CodeWord); 
-            if(Hybrid_flag){
-                Hybrid++;
-                correct_bits += PayLoad_H.n - PayLoad_H.m;
-                continue;
+            if(decode_Payload_flag==false && decode_Extra_flag==false){
+                bool Hybrid_flag = BP_for_Payload(PayLoad_H,iteration_limit,Third_tx_Payload,Payload_CodeWord); 
+                if(Hybrid_flag){
+                    Hybrid++;
+                    correct_bits += PayLoad_H.n - PayLoad_H.m;
+                    continue;
+                }
             }
+            
             
         }
         cout << "RV0 : " << RV0 << " | RV1 : " << RV1 << " | Hybrid : " << Hybrid << "\n";
