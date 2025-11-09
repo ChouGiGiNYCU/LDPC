@@ -22,7 +22,6 @@ int main(int argc,char* argv[]){
     if(argc < 2){
         cout << "** Error ---- No file in \n" ; 
     }
-    int total_frame_count = 200;
     string H_combine_file = argv[1];
     string Payload_PCM_file = argv[2];
     string Extra_PCM_file = argv[3];
@@ -46,6 +45,7 @@ int main(int argc,char* argv[]){
     int RV3_pos = atoi(argv[18]);
     int Each_Tx_Znum = atoi(argv[19]);
     string out_file_hybrid = argv[20];
+    int total_frame_count = atoi(argv[21]);
     cout << "##############################" << "\n";
     cout << "H_combine_file : " << H_combine_file << "\n";
     cout << "Payload PCM file : " << Payload_PCM_file << "\n";
@@ -68,6 +68,7 @@ int main(int argc,char* argv[]){
     cout << "RV3_pos : " << RV3_pos << "\n";
     cout << "out_file_origin : " << out_file_origin << "\n";
     cout << "out_file_hybrid : " << out_file_hybrid << "\n";
+    cout << "total_frame_count : " << total_frame_count << "\n";
     cout << "##############################" << "\n";
     
     // define H_combine
@@ -140,7 +141,7 @@ int main(int argc,char* argv[]){
         double total_bits_origin = 0, correct_bits_origin = 0;
         double total_bits_hybrid = 0, correct_bits_hybrid = 0;
         double sigma = sqrt(1/(2*code_rate*pow(10,SNR/10.0)));
-        int RV0 =0,RV1=0, Hybrid=0,RV2=0;
+        int RV0 =0,RV1_payload=0,RV1_extra=0, Hybrid=0,RV2=0;
         for(double frame_count=0;frame_count<total_frame_count;frame_count++){
             /* Process with RV0*/
             // decode A version with RV0
@@ -227,27 +228,27 @@ int main(int argc,char* argv[]){
             total_bits_origin += Each_Tx_Znum*Z;
             total_bits_hybrid += Each_Tx_Znum*Z;
             if(decode_Payload_flag_RV1==true){
-                correct_bits_origin += PayLoad_H.n - PayLoad_H.m; // payload info bits + extra info bits
-                correct_bits_hybrid += PayLoad_H.n - PayLoad_H.m;
+                correct_bits_origin += (PayLoad_H.n - PayLoad_H.m); // payload info bits + extra info bits
+                correct_bits_hybrid += (PayLoad_H.n - PayLoad_H.m);
+                RV1_payload++;
             }
             if(decode_Extra_flag_RV1==true){
-                correct_bits_origin += Extra_H.n - Extra_H.m;
-                correct_bits_hybrid += Extra_H.n - Extra_H.m;
+                correct_bits_origin += (Extra_H.n - Extra_H.m);
+                correct_bits_hybrid += (Extra_H.n - Extra_H.m);
+                RV1_extra++;
             }
-            if(decode_Payload_flag_RV1 && decode_Extra_flag_RV1){
-                RV1++;
-            }
+            
             /* --------- Hybrid decode Payload ---------*/
-            if(decode_Payload_flag_RV1==false && decode_Extra_flag_RV1==false){
+            if(decode_Payload_flag_RV1==false || decode_Extra_flag_RV1==false){
                 bool hybrid_flag = BP_for_Payload(PayLoad_H,iteration_limit,Third_LLR_Payload,Payload_CodeWord);
-                if(hybrid_flag){
-                    correct_bits_hybrid += PayLoad_H.n - PayLoad_H.m;
+                if(hybrid_flag && decode_Payload_flag_RV1==false){
+                    correct_bits_hybrid += (PayLoad_H.n - PayLoad_H.m);
                     RV2++;
                 }
             }
             
         }
-        cout << "RV0 : " << RV0 << " | RV1 : " << RV1 << " | RV2 : " << RV2 << "\n";
+        cout << "RV0 : " << RV0 << " | RV1 : (" << RV1_payload << "," << RV1_extra << ") "  << " | RV2 : " << RV2 << "\n";
         // cout << "correct_bits_origin : " << correct_bits_origin << " | total_bits_origin : " << total_bits_origin  << "\n";
         double throughput_origin = (correct_bits_origin/total_bits_origin);
         double throughput_hybrid = (correct_bits_hybrid/total_bits_hybrid);

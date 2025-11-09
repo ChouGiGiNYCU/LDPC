@@ -129,7 +129,7 @@ int main(int argc,char* argv[]){
     while(SNR<=SNR_max){
         double total_bits = 0, correct_bits = 0;
         double sigma = sqrt(1/(2*code_rate*pow(10,SNR/10.0)));
-        int RV0 =0,RV1=0, Hybrid=0,RV2=0;
+        int RV0 =0,RV1=0,RV1_payload=0,RV1_extra=0, Hybrid=0,RV2=0;
         for(double frame_count=0;frame_count<total_frame_count;frame_count++){
             /* Process with RV0*/
             // decode A version with RV0
@@ -210,9 +210,11 @@ int main(int argc,char* argv[]){
             total_bits += Each_Tx_Znum*Z;
             if(decode_Payload_flag_RV1==true){
                 correct_bits += PayLoad_H.n - PayLoad_H.m; // payload info bits + extra info bits
+                RV1_payload++;
             }
             if(decode_Extra_flag_RV1==true){
                 correct_bits += Extra_H.n - Extra_H.m;
+                RV1_extra++;
             }
             if(decode_Payload_flag_RV1 && decode_Extra_flag_RV1){
                 RV1++;
@@ -221,7 +223,7 @@ int main(int argc,char* argv[]){
             
             
         }
-        cout << "RV0 : " << RV0 << " | RV1 : " << RV1 << " | RV2 : " << RV2 << "\n";
+        printf("RV0 : %d | RV1:(%d,%d)\n",RV0,RV1_payload,RV1_extra);
         // cout << "correct_bits : " << correct_bits << " | total_bits : " << total_bits  << "\n";
         double throughput = (correct_bits/total_bits);
         outfile << SNR << ", " << throughput << "\n";
