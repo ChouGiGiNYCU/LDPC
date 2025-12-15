@@ -12,7 +12,7 @@ PCM_file = /mnt/c/Users/USER/Desktop/LDPC/PCM/BCH_15_7.txt
 # PCM_outfile = ML_H10x5.csv
 ############# G setting ###########
 GM_file = /mnt/c/Users/USER/Desktop/LDPC/GM/BCH_15_7_G.txt
-PCM_outfile = ML_BCH_15_7.csv
+PCM_outfile = ML_BCH_15_7_test1.csv
 ###################################
 
 

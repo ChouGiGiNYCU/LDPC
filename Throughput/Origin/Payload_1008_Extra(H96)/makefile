@@ -15,7 +15,7 @@ RV1_punc_nums = 96
 # payload_Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/PEGReg504x1008_G.txt
 payload_Generater_matrix_file = None
 ###################################
-out_file = throughput1.csv
+out_file = throughput2.csv
 
 $(TARGET): $(SRCS)
 	$(CC) $(CFLAGS)  $(SRCS) -o  $(TARGET) -lpthread

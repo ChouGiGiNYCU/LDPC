@@ -2907,3 +2907,108 @@ title("5G HARQ - 5GNR-1904 - (RV0+RV3) - it=20")
 xlabel("SNR");
 ylabel("Throughtput")
 grid on;
+
+
+
+%%  1904 rv0+rv3 Xor Case Hybrid it20_6_14
+% 
+clear all;
+clc;
+
+
+% 假設 Excel 檔名為 data.xlsx，且第一列為欄位名稱：SNR, Throughput
+Origin_filename   = "C:\Users\USER\Desktop\LDPC\Throughput\5G_RV_flow\Origin\Payload_5G1904_Extra_2RV(RV0+RV3)_fix\throughput_it20_frame400.csv";
+Enhanced_5G1904_BCH63x30_filename =  "C:\Users\USER\Desktop\LDPC\Throughput\5G_RV_flow\Enhanced\PayLoad5GNR1904_Extra(BCH63x30)_EnhancedH_v1_HybridMethod_RV2(RV0+RV3)_fix_Hybrid_two_test_case\ORcase_Troughput_Hybird_it20_6_14_frame400.csv";    % Excel 檔案名稱
+Enhanced_5G1904_BCH63x36_filename =  "C:\Users\USER\Desktop\LDPC\Throughput\5G_RV_flow\Enhanced\PayLoad5GNR1904_Extra(BCH63x36)_EnhancedH_v1_HybridMethod_RV2(RV0+RV3)_fix_Hybrid_two_test_case\XorCase_Troughput_Hybird_it20_6_14_frame400.csv";
+Enhanced_5G1904_BCH63x51_filename =  "C:\Users\USER\Desktop\LDPC\Throughput\5G_RV_flow\Enhanced\PayLoad5GNR1904_Extra(BCH63x51)_EnhancedH_v1_HybridMethod_RV2(RV0+RV3)_fix_Hybrid_two_test_case\XorCase_Troughput_Hybird_it20_6_14_frame400.csv";
+
+Origin_table  = readtable(Origin_filename);
+Enhanced_5G1904_BCH63x30 = readtable(Enhanced_5G1904_BCH63x30_filename);
+Enhanced_5G1904_BCH63x36 = readtable(Enhanced_5G1904_BCH63x36_filename);
+Enhanced_5G1904_BCH63x51 = readtable(Enhanced_5G1904_BCH63x51_filename);
+
+figure();
+plot(Origin_table.SNR,Origin_table.Throughput,"-*","Color",[0 0 0],"LineWidth",1);
+hold on;
+plot(Enhanced_5G1904_BCH63x30.SNR,Enhanced_5G1904_BCH63x30.Throught,"-^","Color",[0.6350 0.0780 0.1840],"LineWidth",1);
+hold on;
+plot(Enhanced_5G1904_BCH63x36.SNR,Enhanced_5G1904_BCH63x36.Throught,"->","Color",[0.4940 0.1840 0.5560],"LineWidth",1);
+hold on;
+plot(Enhanced_5G1904_BCH63x51.SNR,Enhanced_5G1904_BCH63x51.Throught,"-<","Color",[0.8500 0.3250 0.0980],"LineWidth",1);
+hold on;
+legend("Only Payload - it=20 ","Enhance BCH(63,30) - it=(6,14)","Enhance BCH(63,36) - it=(6,14)","Enhance BCH(63,51) - it=(6,14)");
+% legend("Only Payload - it=20 ","Enhance BCH(63,36) - it=(14,6)","Enhance BCH(63,51) - it=(14,6)");
+
+title("5G HARQ - 5GNR-1904 - (RV0+RV3) Hybrid - it=20  | frame=400")
+xlabel("SNR");
+ylabel("Throughtput")
+grid on;
+
+
+%%  1904 rv0+rv3 Xor Case Hybrid it20_14_6
+% 
+clear all;
+clc;
+
+
+% 假設 Excel 檔名為 data.xlsx，且第一列為欄位名稱：SNR, Throughput
+Origin_filename   = "C:\Users\USER\Desktop\LDPC\Throughput\5G_RV_flow\Origin\Payload_5G1904_Extra_2RV(RV0+RV3)_fix\throughput_it20_frame400.csv";
+Enhanced_5G1904_BCH63x30_filename =  "C:\Users\USER\Desktop\LDPC\Throughput\5G_RV_flow\Enhanced\PayLoad5GNR1904_Extra(BCH63x30)_EnhancedH_v1_HybridMethod_RV2(RV0+RV3)_fix_Hybrid_two_test_case\ORcase_Troughput_Hybird_it20_14_6_frame400.csv";    % Excel 檔案名稱
+Enhanced_5G1904_BCH63x36_filename =  "C:\Users\USER\Desktop\LDPC\Throughput\5G_RV_flow\Enhanced\PayLoad5GNR1904_Extra(BCH63x36)_EnhancedH_v1_HybridMethod_RV2(RV0+RV3)_fix_Hybrid_two_test_case\XorCase_Troughput_Hybird_it20_14_6_frame400.csv";
+Enhanced_5G1904_BCH63x51_filename =  "C:\Users\USER\Desktop\LDPC\Throughput\5G_RV_flow\Enhanced\PayLoad5GNR1904_Extra(BCH63x51)_EnhancedH_v1_HybridMethod_RV2(RV0+RV3)_fix_Hybrid_two_test_case\XorCase_Troughput_Hybird_it20_14_6_frame400.csv";
+
+Origin_table  = readtable(Origin_filename);
+Enhanced_5G1904_BCH63x30 = readtable(Enhanced_5G1904_BCH63x30_filename);
+Enhanced_5G1904_BCH63x36 = readtable(Enhanced_5G1904_BCH63x36_filename);
+Enhanced_5G1904_BCH63x51 = readtable(Enhanced_5G1904_BCH63x51_filename);
+
+figure();
+plot(Origin_table.SNR,Origin_table.Throughput,"-*","Color",[0 0 0],"LineWidth",1);
+hold on;
+plot(Enhanced_5G1904_BCH63x30.SNR,Enhanced_5G1904_BCH63x30.Throught,"-^","Color",[0.6350 0.0780 0.1840],"LineWidth",1);
+hold on;
+plot(Enhanced_5G1904_BCH63x36.SNR,Enhanced_5G1904_BCH63x36.Throught,"->","Color",[0.4940 0.1840 0.5560],"LineWidth",1);
+hold on;
+plot(Enhanced_5G1904_BCH63x51.SNR,Enhanced_5G1904_BCH63x51.Throught,"-<","Color",[0.8500 0.3250 0.0980],"LineWidth",1);
+hold on;
+legend("Only Payload - it=20 ","Enhance BCH(63,30) - it=(14,6)","Enhance BCH(63,36) - it=(14,6)","Enhance BCH(63,51) - it=(14,6)");
+% legend("Only Payload - it=20 ","Enhance BCH(63,36) - it=(14,6)","Enhance BCH(63,51) - it=(14,6)");
+
+title("5G HARQ - 5GNR-1904 - (RV0+RV3) Hybrid - it=20  | frame=400")
+xlabel("SNR");
+ylabel("Throughtput")
+grid on;
+
+%%  1904 rv0+rv3 Xor Case Hybrid it20_0_20
+% 
+clear all;
+clc;
+
+
+% 假設 Excel 檔名為 data.xlsx，且第一列為欄位名稱：SNR, Throughput
+Origin_filename   = "C:\Users\USER\Desktop\LDPC\Throughput\5G_RV_flow\Origin\Payload_5G1904_Extra_2RV(RV0+RV3)_fix\throughput_it20_frame400.csv";
+Enhanced_5G1904_BCH63x30_filename =  "C:\Users\USER\Desktop\LDPC\Throughput\5G_RV_flow\Enhanced\PayLoad5GNR1904_Extra(BCH63x30)_EnhancedH_v1_HybridMethod_RV2(RV0+RV3)_fix_Hybrid_two_test_case\ORcase_Troughput_Hybird_it20_0_20_frame400.csv";    % Excel 檔案名稱
+Enhanced_5G1904_BCH63x36_filename =  "C:\Users\USER\Desktop\LDPC\Throughput\5G_RV_flow\Enhanced\PayLoad5GNR1904_Extra(BCH63x36)_EnhancedH_v1_HybridMethod_RV2(RV0+RV3)_fix_Hybrid_two_test_case\XorCase_Troughput_Hybird_it20_0_20_frame400.csv";
+Enhanced_5G1904_BCH63x51_filename =  "C:\Users\USER\Desktop\LDPC\Throughput\5G_RV_flow\Enhanced\PayLoad5GNR1904_Extra(BCH63x51)_EnhancedH_v1_HybridMethod_RV2(RV0+RV3)_fix_Hybrid_two_test_case\XorCase_Troughput_Hybird_it20_0_20_frame400.csv";
+
+Origin_table  = readtable(Origin_filename);
+Enhanced_5G1904_BCH63x30 = readtable(Enhanced_5G1904_BCH63x30_filename);
+Enhanced_5G1904_BCH63x36 = readtable(Enhanced_5G1904_BCH63x36_filename);
+Enhanced_5G1904_BCH63x51 = readtable(Enhanced_5G1904_BCH63x51_filename);
+
+figure();
+plot(Origin_table.SNR,Origin_table.Throughput,"-*","Color",[0 0 0],"LineWidth",1);
+hold on;
+plot(Enhanced_5G1904_BCH63x30.SNR,Enhanced_5G1904_BCH63x30.Throught,"-^","Color",[0.6350 0.0780 0.1840],"LineWidth",1);
+hold on;
+plot(Enhanced_5G1904_BCH63x36.SNR,Enhanced_5G1904_BCH63x36.Throught,"->","Color",[0.4940 0.1840 0.5560],"LineWidth",1);
+hold on;
+plot(Enhanced_5G1904_BCH63x51.SNR,Enhanced_5G1904_BCH63x51.Throught,"-<","Color",[0.8500 0.3250 0.0980],"LineWidth",1);
+hold on;
+legend("Only Payload - it=20 ","Enhance BCH(63,30) - it=(0,20)","Enhance BCH(63,36) - it=(0,20)","Enhance BCH(63,51) - it=(0,20)");
+% legend("Only Payload - it=20 ","Enhance BCH(63,36) - it=(14,6)","Enhance BCH(63,51) - it=(14,6)");
+
+title("5G HARQ - 5GNR-1904 - (RV0+RV3) Hybrid - it=20  | frame=400")
+xlabel("SNR");
+ylabel("Throughtput")
+grid on;
