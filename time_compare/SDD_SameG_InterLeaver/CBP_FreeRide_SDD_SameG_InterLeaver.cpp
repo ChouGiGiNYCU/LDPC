@@ -125,7 +125,8 @@ int main(int argc,char* argv[]){
         for(int i=0;i<iteration_limit;i++) payload_bit_error_count[i]=0;
         double Extra_Error_bits = 0;
         double total_time = 0;
-        while((frame_count-payload_frame_error)<try_correct_frame){
+        double frame = 0;
+        while(frame<try_correct_frame){
             // 處理 Payload CodeWord 是zero 還是Encode
             if(PayLoad_Flag){
                 for(int i=0;i<PayLoad_G.size();i++){
@@ -177,9 +178,10 @@ int main(int argc,char* argv[]){
             bool payload_bit_error_flag=false;
             int payload_error_bit = 0;
             bool extra_bit_error_flag = false;
+            double pause_time;
             // Do Soft-Decision
             auto start = std::chrono::high_resolution_clock::now();
-            vector<int> Guess_Extra_Encode_Interleaver = FindLargeLLR(Extra_G,PayLoad_H,receiver_LLR,info_bits,InterLeaver_col);
+            vector<int> Guess_Extra_Encode_Interleaver = FindLargeLLR(Extra_G,PayLoad_H,receiver_LLR,info_bits,InterLeaver_col,pause_time);
             // cout << "Guess_Extra_Encode_Interleaver size : "<< Guess_Extra_Encode_Interleaver.size() << " ";
             
             // Remove the interference
@@ -297,12 +299,13 @@ int main(int argc,char* argv[]){
 
             if(payload_bit_error_flag){
                 payload_frame_error+=1;
-            }else{
+            }
+            if(!extra_bit_error_flag && !payload_bit_error_flag){
                 auto end = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double> duration = end - start;
-                total_time += duration.count();
+                total_time += duration.count() - pause_time;
+                frame++;
             }
-            
             frame_count++;
         }
         double avg_time = total_time / try_correct_frame;

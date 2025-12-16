@@ -36,13 +36,14 @@ vector<bool> intToBinaryVector(int& value,const int& bit_length) {
 }
 
 
-vector<int> FindLargeLLR(vector<vector<bool>>& G,const struct parity_check& PayLoad_H,const vector<double>& receive_LLR,const int& info_length,const int& InterLeaver_col){
+vector<int> FindLargeLLR(vector<vector<bool>>& G,const struct parity_check& PayLoad_H,const vector<double>& receive_LLR,const int& info_length,const int& InterLeaver_col,double& pause_time){
     int info_bits = info_length; // rowsize
     int AllPossible = static_cast<int>(pow(2,info_bits));
     vector<double> receive_LLR_copy = receive_LLR;
     vector<int> Extra_Encode_copy;
     double Large_LLR_sum = DBL_MIN; // double min
     // 找出所有Extra CodeWord 所有組合，且疊加後，去找出最佳的check equations的LLR
+    double total_pause_time = 0;
     for(int k=0;k<AllPossible;k++){
         // copy the recieve_LLR
         receive_LLR_copy = receive_LLR;
@@ -52,7 +53,14 @@ vector<int> FindLargeLLR(vector<vector<bool>>& G,const struct parity_check& PayL
 
         vector<int> Extra_Encode = Vector_Dot_Matrix_Int(bin,G);
         for(int i=0;i<Extra_Encode.size();i++) Extra_Encode[i] = Extra_Encode[i]%2;
+        /* ---- 暫停計時區域開始 (不想算這段) ---- */
+        auto pause_start = std::chrono::high_resolution_clock::now();
         vector<int> interleaver_result = interleaver(Extra_Encode,InterLeaver_col);
+        auto pause_end = std::chrono::high_resolution_clock::now();
+        /* ---- 暫停計時區域結束 ---- */
+        // 計算不想算的時間
+        std::chrono::duration<double> pause_duration = pause_end - pause_start;
+        total_pause_time += pause_duration.count();
         
         // do LLR count 
         for(int VN=0;VN<receive_LLR_copy.size();VN++){
@@ -78,7 +86,7 @@ vector<int> FindLargeLLR(vector<vector<bool>>& G,const struct parity_check& PayL
         }
         
     }
-    
+    pause_time = total_pause_time; 
     return Extra_Encode_copy;
 }
 

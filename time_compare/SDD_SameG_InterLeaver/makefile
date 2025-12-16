@@ -15,12 +15,12 @@ Extra_out_file = FreeRide_SDD_SameG_InterLeaver_P1008_ExtraInfo6_Extra_it$(Itera
 
 ############# G setting ###########
 payload_Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/PEGReg504x1008_G.txt
-payload_Encdoe_Flag = 1
+payload_Encdoe_Flag = 0
 extra_Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/PEGReg504x1008_G.txt
 extra_Encdoe_Flag = 1
 ###################################
-info_bits = 6
-time_file = time.csv
+info_bits = 7
+time_file = time_extrainfo7.csv
 $(TARGET): $(SRCS)
 	$(CC) $(CFLAGS)  $(SRCS) -o  $(TARGET) -lpthread
 
