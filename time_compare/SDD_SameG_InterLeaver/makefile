@@ -20,7 +20,7 @@ extra_Generater_matrix_file = /mnt/c/Users/USER/Desktop/LDPC/GM/PEGReg504x1008_G
 extra_Encdoe_Flag = 1
 ###################################
 info_bits = 7
-time_file = time_extrainfo7.csv
+time_file = time_extrainfo7_new.csv
 $(TARGET): $(SRCS)
 	$(CC) $(CFLAGS)  $(SRCS) -o  $(TARGET) -lpthread
 

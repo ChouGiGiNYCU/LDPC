@@ -30,7 +30,7 @@ vector<int> Read_punc_pos(string file,vector<bool>& punc_pos,int  extra_nums);
 
 int main(int argc,char* argv[]){
     double frame_error_lowwer_bound = 400;
-    int try_correct_frame = 10;
+    int try_correct_frame = 50;
     if(argc < 2){
         cout << "** Error ---- No file in" << endl; 
     }
@@ -290,6 +290,9 @@ int main(int argc,char* argv[]){
 
                 it++;
             }
+            auto end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> duration = end - start;
+            total_time += duration.count() - pause_time;
             // 如果 syndorme check is ok ，但是codeword bit 有錯，代表解錯codeword ， BER[it+1:iteration_limit] += codeword length
             if(!payload_error_syndrome && payload_bit_error_flag){
                 for(int it_idx=it;it_idx<iteration_limit;it_idx++){
@@ -301,9 +304,6 @@ int main(int argc,char* argv[]){
                 payload_frame_error+=1;
             }
             if(!extra_bit_error_flag && !payload_bit_error_flag){
-                auto end = std::chrono::high_resolution_clock::now();
-                std::chrono::duration<double> duration = end - start;
-                total_time += duration.count() - pause_time;
                 frame++;
             }
             frame_count++;

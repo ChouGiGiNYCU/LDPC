@@ -159,17 +159,18 @@ int main(int argc,char* argv[]){
     boost::dynamic_bitset<> payload_guess(PayLoad_H.n);
     boost::dynamic_bitset<> extra_guess(Extra_H.n);
     
-    double try_correct_frame = 100;
-    double total_time = 0;
+    double try_correct_frame = 50;
+    
     while(SNR <= SNR_max){
         double sigma = sqrt(1/(2*code_rate*pow(10,SNR/10.0)));
-        double frame_count=0;
         double payload_frame_error=0,extra_frame_error=0,superposition_frame_error=0;
         int it;
+        double total_time = 0;
+        double frame = 0;
         fill(payload_bit_error_count.begin(),payload_bit_error_count.end(),0.0);
         fill(extra_bit_error_count.begin(),extra_bit_error_count.end(),0.0);
         
-        while((frame_count-payload_frame_error) < try_correct_frame ){
+        while(frame < try_correct_frame ){
             // 處理 Payload CodeWord 是zero 還是Encode
             if(PayLoad_Flag){
                 for(int i=0;i<Payload_Origin_G.size();i++){
@@ -371,6 +372,9 @@ int main(int argc,char* argv[]){
               
                 it++;
             }
+            auto end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> duration = end - start;
+            total_time += duration.count();
             // 如果 syndorme check is ok ，但是codeword bit 有錯，代表解錯codeword ， BER[it+1:iteration_limit] += codeword length
             if(!payload_error_syndrome && payload_bit_error_flag){
                 for(int it_idx=it;it_idx<iteration_limit;it_idx++){
@@ -383,20 +387,19 @@ int main(int argc,char* argv[]){
                     extra_bit_error_count[it_idx] += extra_error_bit;
                 }
             }
-           
+            
             // Frame count
             if(payload_bit_error_flag){
                 payload_frame_error+=1;
-            }else{
-                auto end = std::chrono::high_resolution_clock::now();
-                std::chrono::duration<double> duration = end - start;
-                total_time += duration.count();
             }
+
             if(extra_bit_error_flag){
                 extra_frame_error+=1;
             }
-            
-            frame_count++;
+            if(!extra_bit_error_flag && !payload_bit_error_flag){
+                frame++;
+            }
+        
             
         }
         
